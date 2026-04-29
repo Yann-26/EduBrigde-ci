@@ -1,0 +1,21 @@
+{
+    "name": "study-india-monorepo",
+    "private": true,
+    "scripts": {
+        "dev": "turbo dev",
+        "dev:frontend": "turbo dev --filter=@study-india/frontend",
+        "dev:backend": "turbo dev --filter=@study-india/backend",
+        "build": "turbo build",
+        "start": "turbo start",
+        "lint": "turbo lint",
+        "clean": "turbo clean"
+    },
+    "devDependencies": {
+        "turbo": "^1.13.0"
+    },
+    "packageManager": "npm@10.0.0",
+    "workspaces": [
+        "study_india",
+        "study_india_backend"
+    ]
+}
