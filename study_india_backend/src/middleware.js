@@ -12,7 +12,7 @@ const PUBLIC_GET_PATHS = [
 const PUBLIC_POST_PATHS = [
     '/api/auth/login',
     '/api/auth/register',
-    '/api/auth/me',              // ADD THIS - will be checked by token inside route
+    '/api/auth/me',              //will be checked by token inside route
     '/api/applications',
     '/api/documents/upload',
     '/api/payments',

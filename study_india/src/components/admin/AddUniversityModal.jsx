@@ -70,14 +70,14 @@ function AddUniversityModal({ university, onClose, onSave }) {
         setLoading(true)
         try {
             const isEdit = !!university
+            const hasImageFile = formData.image instanceof File
             const hasBrochureFile = formData.brochure_pdf instanceof File
             const hasFeesFile = formData.fees_pdf instanceof File
-            const needsFormData = isEdit && (hasBrochureFile || hasFeesFile)
+            const needsFormData = hasImageFile || hasBrochureFile || hasFeesFile
 
             if (needsFormData) {
                 const fd = new FormData()
 
-                // IMPORTANT: Add the ID first
                 if (university?.id) {
                     fd.append('id', university.id)
                 }
@@ -86,27 +86,17 @@ function AddUniversityModal({ university, onClose, onSave }) {
                     const value = formData[key]
                     if (value === null || value === undefined) return
 
-                    if (key === 'brochure_pdf' && value instanceof File) {
-                        fd.append('brochure_pdf', value)
-                    } else if (key === 'fees_pdf' && value instanceof File) {
-                        fd.append('fees_pdf', value)
-                    } else if (!(value instanceof File)) {
+                    if (value instanceof File) {
+                        fd.append(key === 'image' ? 'image_file' : key, value)
+                    } else {
                         fd.append(key, value)
                     }
                 })
 
                 await onSave(fd, true)
             } else {
-                // Send as JSON - include the ID
-                const dataToSend = {
-                    ...formData,
-                    id: university?.id || formData.id // Ensure ID is included
-                }
-
-                // Remove file objects
-                if (dataToSend.brochure_pdf instanceof File) delete dataToSend.brochure_pdf
-                if (dataToSend.fees_pdf instanceof File) delete dataToSend.fees_pdf
-
+                const dataToSend = { ...formData }
+                if (dataToSend.image instanceof File) delete dataToSend.image
                 await onSave(dataToSend, false)
             }
         } catch (err) {
@@ -116,6 +106,7 @@ function AddUniversityModal({ university, onClose, onSave }) {
             setLoading(false)
         }
     }
+    
 
     // Common emoji logos for universities
     const logoOptions = ['🏫', '🎓', '🏛️', '📚', '🔬', '💡', '🌟', '🎯', '🏆', '✨']
@@ -190,34 +181,64 @@ function AddUniversityModal({ university, onClose, onSave }) {
                         />
                     </div>
 
-                    {/* Image URL */}
+                    {/* Image Upload */}
                     <div>
                         <label className="block text-sm font-medium text-gray-700 mb-2 flex items-center gap-2">
-                            <FiImage size={14} /> University Image URL
+                            <FiImage size={14} /> University Image
                         </label>
-                        <input
-                            type="url"
-                            name="image"
-                            value={formData.image}
-                            onChange={handleChange}
-                            placeholder="https://images.unsplash.com/photo-..."
-                            className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-indigo-500 outline-none"
-                        />
-                        {formData.image && (
-                            <div className="mt-2 relative rounded-xl overflow-hidden h-32 bg-gray-100">
+
+                        {/* Current Image Preview */}
+                        {(formData.image && typeof formData.image === 'string') && (
+                            <div className="mb-3 relative rounded-xl overflow-hidden h-40 bg-gray-100">
                                 <img
-                                    src={formData.image}
-                                    alt="Preview"
+                                    src={typeof formData.image === 'string' && formData.image.startsWith('http')
+                                        ? formData.image
+                                        : `https://nkaempzjiepcjkzqfquh.supabase.co/storage/v1/object/public/EduBridge/${formData.image}`}
+                                    alt="Current"
                                     className="w-full h-full object-cover"
-                                    onError={(e) => {
-                                        e.target.style.display = 'none'
-                                    }}
                                 />
                             </div>
                         )}
-                        <p className="text-xs text-gray-500 mt-1">
-                            Use a direct image URL (unsplash, etc.) or leave empty for default
-                        </p>
+
+                        {/* New File Preview */}
+                        {formData.image instanceof File && (
+                            <div className="mb-3 relative rounded-xl overflow-hidden h-40 bg-gray-100">
+                                <img
+                                    src={URL.createObjectURL(formData.image)}
+                                    alt="Preview"
+                                    className="w-full h-full object-cover"
+                                />
+                            </div>
+                        )}
+
+                        <div className={`relative border-2 border-dashed rounded-xl p-6 transition-all text-center bg-gray-50 hover:bg-gray-100 cursor-pointer ${formData.image ? 'border-green-400 bg-green-50/30' : 'border-gray-300 hover:border-indigo-400'
+                            }`}>
+                            <input
+                                type="file"
+                                name="image_file"
+                                accept="image/*"
+                                onChange={(e) => {
+                                    const file = e.target.files[0]
+                                    if (file) {
+                                        setFormData({ ...formData, image: file })
+                                    }
+                                }}
+                                className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10"
+                            />
+                            <div className="text-center">
+                                {formData.image ? (
+                                    <FiCheckCircle size={24} className="mx-auto text-green-500 mb-2" />
+                                ) : (
+                                    <FiUploadCloud size={24} className="mx-auto text-gray-400 mb-2" />
+                                )}
+                                <p className="text-sm font-medium text-gray-600">
+                                    {formData.image
+                                        ? (formData.image instanceof File ? formData.image.name : 'Current image (click to replace)')
+                                        : 'Click or drag to upload image'}
+                                </p>
+                                <p className="text-xs text-gray-400 mt-1">JPG, PNG, WebP (Max 5MB)</p>
+                            </div>
+                        </div>
                     </div>
 
                     {/* Website URL */}

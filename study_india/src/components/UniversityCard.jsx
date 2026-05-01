@@ -15,9 +15,17 @@ function UniversityCard({ university }) {
     } catch (e) {
         courses = []
     }
+    const getImageUrl = (imagePath) => {
+        // Convert to string
+        const path = String(imagePath)
+
+        if (path.startsWith('http')) return path
+
+        return `https://nkaempzjiepcjkzqfquh.supabase.co/storage/v1/object/public/EduBridge/${path}`
+    }
 
     // Fallback image
-    const imageUrl = university.image
+    const imageUrl = getImageUrl(university.image)
     const logoEmoji = university.logo || '🎓'
     const type = university.type || 'Private'
     const ranking = university.ranking || 'N/A'
@@ -36,6 +44,10 @@ function UniversityCard({ university }) {
                     src={imageUrl}
                     alt={university.name || 'University'}
                     className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700"
+                // onError={(e) => {
+                //     e.target.onerror = null
+                //     e.target.src = 'https://images.unsplash.com/photo-1541339907198-e08756dedf3f?w=600'
+                // }}
                 />
                 <div className="absolute top-4 right-4 z-20 bg-white/90 backdrop-blur-sm px-3 py-1 rounded-full text-xs font-bold text-indigo-600 shadow-sm">
                     {type}

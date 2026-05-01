@@ -56,13 +56,19 @@ function UniversityDetail() {
         )
     }
 
+    const getImageUrl = (imagePath) => {
+        if (!imagePath) return 'https://images.unsplash.com/photo-1541339907198-e08756dedf3f?w=600'
+        if (imagePath.startsWith('http')) return imagePath
+        return `https://nkaempzjiepcjkzqfquh.supabase.co/storage/v1/object/public/EduBridge/${imagePath}`
+    }
+
     return (
         <div className="bg-gray-50 min-h-screen pb-24">
             {/* Hero Header */}
             <div className="relative h-[60vh] min-h-[500px] flex items-end pb-16">
                 <div className="absolute inset-0 z-0">
                     <img
-                        src={university.image}
+                        src={getImageUrl(university.image)}
                         alt={university.name}
                         className="w-full h-full object-cover"
                     />

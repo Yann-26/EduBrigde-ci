@@ -47,7 +47,7 @@ export async function GET(request, { params }) {
             placementRate: university.placement_rate || 'N/A',
             brochure_pdf: university.brochure_pdf || null,
             fees_pdf: university.fees_pdf || null,
-            brochure: university.brochure ,
+            brochure: university.brochure,
             highlights: university.highlights || [],
             status: university.status,
         };
@@ -111,6 +111,13 @@ export async function PUT(request, { params }) {
             const coursesStr = formData.get('courses');
             if (coursesStr) {
                 updateData['courses'] = coursesStr;
+            }
+
+            // Handle image file upload
+            const imageFile = formData.get('image_file') || formData.get('image');
+            if (imageFile && imageFile.size > 0) {
+                const uploaded = await uploadFile(imageFile, 'universities/images');
+                updateData['image'] = uploaded.filePath;
             }
 
             // Handle brochure PDF

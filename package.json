@@ -17,5 +17,8 @@
     "workspaces": [
         "study_india",
         "study_india_backend"
-    ]
+    ],
+    "dependencies": {
+        "concurrently": "^9.2.1"
+    }
 }
