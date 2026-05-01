@@ -24,7 +24,7 @@ function AdminPanel() {
     const [searchTerm, setSearchTerm] = useState('')
     const [statusFilter, setStatusFilter] = useState('all')
     const [dateFilter, setDateFilter] = useState('all')
-    const navigate = useNavigate()  // Now it's defined
+    const navigate = useNavigate()
     const [notifications, setNotifications] = useState([
         { id: 1, message: "New application received from Konan Yao", time: "2 min ago", read: false },
         { id: 2, message: "Payment received - Application #1023", time: "15 min ago", read: false },
@@ -119,13 +119,13 @@ function AdminPanel() {
             case 'users':
                 return <Users />
             case 'notifications':
-                return <Notifications /> 
+                return <Notifications />
             case 'visa-steps':
                 return <VisaSteps />
             case 'visa-applications':
                 return <VisaApplications />
             default:
-                return <Dashboard />
+                return <DashBoard />
         }
     }
 
