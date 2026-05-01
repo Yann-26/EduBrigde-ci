@@ -1,20 +1,18 @@
-// admin/AdminPanel.jsx
 import React, { useState, useEffect } from 'react'
-import Sidebar from '../../components/admin/SideBar'
+import { useNavigate } from 'react-router-dom'
+import Sidebar from '../../components/admin/Sidebar'
 import Header from '../../components/admin/Header'
-import DashBoard from './DashBoard'
+import DashBoard from './Dashboard'
 import Applications from './Applications'
 import DocumentVerification from './DocumentVerification'
 import Payments from './Payments'
 import Reports from './Reports'
 import Settings from './Settings'
 import Universities from './Universities'
-import VisaSteps from './VisaSteps'
 import Users from './Users'
 import Notifications from './Notifications'
-import { useNavigate } from 'react-router-dom'
+import VisaSteps from './VisaSteps'
 import VisaApplications from './VisaApplications'
-
 
 function AdminPanel() {
     const [activeTab, setActiveTab] = useState('dashboard')
@@ -25,12 +23,6 @@ function AdminPanel() {
     const [statusFilter, setStatusFilter] = useState('all')
     const [dateFilter, setDateFilter] = useState('all')
     const navigate = useNavigate()
-    const [notifications, setNotifications] = useState([
-        { id: 1, message: "New application received from Konan Yao", time: "2 min ago", read: false },
-        { id: 2, message: "Payment received - Application #1023", time: "15 min ago", read: false },
-        { id: 3, message: "Document verification pending for Marie Kouassi", time: "1 hour ago", read: true },
-        { id: 4, message: "System update completed", time: "2 hours ago", read: true },
-    ])
 
     useEffect(() => {
         checkAuth()
@@ -92,24 +84,11 @@ function AdminPanel() {
             case 'dashboard':
                 return <DashBoard />
             case 'applications':
-                return <Applications
-                    searchTerm={searchTerm}
-                    setSearchTerm={setSearchTerm}
-                    statusFilter={statusFilter}
-                    setStatusFilter={setStatusFilter}
-                    dateFilter={dateFilter}
-                    setDateFilter={setDateFilter}
-                />
+                return <Applications searchTerm={searchTerm} setSearchTerm={setSearchTerm} statusFilter={statusFilter} setStatusFilter={setStatusFilter} dateFilter={dateFilter} setDateFilter={setDateFilter} />
             case 'documents':
-                return <DocumentVerification
-                    searchTerm={searchTerm}
-                    setSearchTerm={setSearchTerm}
-                />
+                return <DocumentVerification searchTerm={searchTerm} setSearchTerm={setSearchTerm} />
             case 'payments':
-                return <Payments
-                    searchTerm={searchTerm}
-                    setSearchTerm={setSearchTerm}
-                />
+                return <Payments searchTerm={searchTerm} setSearchTerm={setSearchTerm} />
             case 'reports':
                 return <Reports />
             case 'settings':
@@ -131,18 +110,9 @@ function AdminPanel() {
 
     return (
         <div className="min-h-screen bg-gray-50 flex">
-            <Sidebar
-                sidebarOpen={sidebarOpen}
-                setSidebarOpen={setSidebarOpen}
-                activeTab={activeTab}
-                setActiveTab={setActiveTab}
-                onLogout={handleLogout}
-            />
+            <Sidebar sidebarOpen={sidebarOpen} setSidebarOpen={setSidebarOpen} activeTab={activeTab} setActiveTab={setActiveTab} onLogout={handleLogout} />
             <div className={`flex-1 ${sidebarOpen ? 'ml-64' : 'ml-20'} transition-all duration-300`}>
-                <Header
-                    activeTab={activeTab}
-                    onLogout={handleLogout}
-                />
+                <Header activeTab={activeTab} onLogout={handleLogout} />
                 <main className="p-4 md:p-8">
                     {renderContent()}
                 </main>
