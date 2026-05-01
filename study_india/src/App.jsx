@@ -10,7 +10,7 @@ import VisaTracker from './pages/VisaTracker'
 import Apply from './pages/Apply'
 import Login from './pages/Login'
 import Register from './pages/Register'
-import AdminPanel from './pages/admin/AdminLogin'
+import AdminPanel from './pages/admin/AdminPanel'
 import AdminLogin from './pages/admin/AdminLogin'
 import MyApplications from './pages/MyApplications'
 
