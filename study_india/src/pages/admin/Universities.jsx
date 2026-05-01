@@ -39,34 +39,72 @@ function Universities() {
         }
     }
 
-    const addUniversity = async (newUniversity) => {
+    const addUniversity = async (data, isFormData = false) => {
         try {
             const token = localStorage.getItem('token')
 
-            // Convert camelCase to snake_case
-            const bodyData = {
-                ...newUniversity,
-                international_students: newUniversity.internationalStudents || newUniversity.international_students || 0,
-                placement_rate: newUniversity.placementRate || newUniversity.placement_rate || '',
-            }
-            delete bodyData.internationalStudents
-            delete bodyData.placementRate
+            const url = `${API_URL}/universities`
+            let options
 
-            const response = await fetch(`${API_URL}/universities`, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    Authorization: `Bearer ${token}`,
-                },
-                body: JSON.stringify(bodyData),
-            })
-            const result = await response.json()
+            if (isFormData) {
+                // FormData for file uploads
+                options = {
+                    method: 'POST',
+                    headers: { Authorization: `Bearer ${token}` },
+                    body: data, // FormData directly
+                }
+            } else {
+                // JSON for simple text fields
+                const bodyData = {
+                    name: data.name,
+                    location: data.location,
+                    description: data.description,
+                    established: parseInt(data.established) || new Date().getFullYear(),
+                    type: data.type || 'Private',
+                    accreditation: data.accreditation || 'UGC',
+                    ranking: data.ranking || '',
+                    image: data.image || null,
+                    logo: data.logo || '🏫',
+                    website: data.website || null,
+                    status: data.status || 'active',
+                    international_students: parseInt(data.international_students) || 0,
+                    placement_rate: data.placement_rate || '',
+                }
+
+                options = {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        Authorization: `Bearer ${token}`,
+                    },
+                    body: JSON.stringify(bodyData),
+                }
+            }
+
+            console.log('Adding university, isFormData:', isFormData)
+
+            const response = await fetch(url, options)
+            const text = await response.text()
+            console.log('Response:', text)
+
+            let result
+            try {
+                result = JSON.parse(text)
+            } catch (e) {
+                console.error('Failed to parse:', text)
+                throw new Error('Server returned invalid response')
+            }
+
             if (result.success) {
                 setUniversities([...universities, result.data])
                 setShowAddModal(false)
+                alert('University added successfully!')
+            } else {
+                alert(result.error || 'Failed to add university')
             }
         } catch (err) {
             console.error('Failed to add university:', err)
+            alert('Failed to add university: ' + err.message)
         }
     }
 
@@ -74,20 +112,8 @@ function Universities() {
         try {
             const token = localStorage.getItem('token')
 
-            // Get the university ID - try multiple sources
-            let universityId = null
-
-            if (isFormData) {
-                // From FormData
-                universityId = data.get('id') || editingUniversity?.id
-            } else {
-                // From JSON object
-                universityId = data.id || editingUniversity?.id
-            }
-
-            console.log('Updating university ID:', universityId)
-            console.log('Is FormData:', isFormData)
-            console.log('Editing university:', editingUniversity)
+            // Get the university ID
+            const universityId = isFormData ? data.get('id') : data.id
 
             if (!universityId) {
                 alert('Error: University ID not found')
@@ -105,23 +131,28 @@ function Universities() {
             }
 
             const response = await fetch(url, options)
-            const result = await response.json()
+            const text = await response.text()
 
-            console.log('Update result:', result)
+            let result
+            try {
+                result = JSON.parse(text)
+            } catch (e) {
+                throw new Error('Server returned invalid response')
+            }
 
             if (result.success) {
                 setUniversities(universities.map(u =>
                     u.id === universityId ? { ...u, ...result.data } : u
                 ))
                 setEditingUniversity(null)
-                alert('University updated successfully!')
-                fetchUniversities() // Refresh the list
+                alert('University updated!')
+                fetchUniversities()
             } else {
-                alert(result.error || 'Failed to update university')
+                alert(result.error || 'Failed to update')
             }
         } catch (err) {
-            console.error('Failed to update university:', err)
-            alert('Failed to update university')
+            console.error('Failed to update:', err)
+            alert('Failed to update')
         }
     }
 
