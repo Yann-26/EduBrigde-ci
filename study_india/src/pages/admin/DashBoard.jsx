@@ -5,9 +5,9 @@ import {
     FiCalendar, FiActivity, FiGlobe, FiBookOpen, FiLoader
 } from 'react-icons/fi'
 
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000/api'
+const API_URL = import.meta.env.VITE_API_URL || '/api'
 
-function Dashboard() {
+function DashBoard() {
     const [currentTime, setCurrentTime] = useState(new Date())
     const [loading, setLoading] = useState(true)
     const [stats, setStats] = useState({
@@ -332,4 +332,4 @@ function Dashboard() {
     )
 }
 
-export default Dashboard
+export default DashBoard

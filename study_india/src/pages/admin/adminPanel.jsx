@@ -2,7 +2,7 @@
 import React, { useState, useEffect } from 'react'
 import Sidebar from '../../components/admin/SideBar'
 import Header from '../../components/admin/Header'
-import Dashboard from './Dashboard'
+import Dashboard from './DashBoard'
 import Applications from './Applications'
 import DocumentVerification from './DocumentVerification'
 import Payments from './Payments'
