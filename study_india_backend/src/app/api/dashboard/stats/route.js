@@ -1,6 +1,10 @@
 import { NextResponse } from 'next/server';
 import { supabaseAdmin } from '@/lib/supabase';
 
+
+// Force dynamic - no static generation
+export const dynamic = 'force-dynamic';
+
 export async function GET() {
     try {
         // Get application counts by status

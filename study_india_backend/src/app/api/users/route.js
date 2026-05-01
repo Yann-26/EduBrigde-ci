@@ -2,6 +2,9 @@ import { NextResponse } from 'next/server';
 import { supabaseAdmin } from '@/lib/supabase';
 import { requireAdmin, hashPassword } from '@/lib/auth';
 
+// Force dynamic - no static generation
+export const dynamic = 'force-dynamic';
+
 export async function GET(request) {
     try {
         await requireAdmin();

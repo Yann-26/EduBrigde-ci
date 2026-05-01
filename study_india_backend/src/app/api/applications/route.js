@@ -3,6 +3,9 @@ import { supabaseAdmin } from '@/lib/supabase';
 import { uploadMultipleFiles } from '@/lib/storage';
 import { sendApplicationConfirmation } from '@/lib/email';
 
+// Force dynamic - no static generation
+export const dynamic = 'force-dynamic';
+
 export async function POST(request) {
     try {
         const formData = await request.formData();

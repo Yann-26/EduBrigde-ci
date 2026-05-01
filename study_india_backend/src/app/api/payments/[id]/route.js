@@ -2,6 +2,9 @@ import { NextResponse } from 'next/server';
 import { supabaseAdmin } from '@/lib/supabase';
 import { requireAuth } from '@/lib/auth';
 
+// Force dynamic - no static generation
+export const dynamic = 'force-dynamic';
+
 export async function PUT(request, { params }) {
     try {
         const user = await requireAuth();

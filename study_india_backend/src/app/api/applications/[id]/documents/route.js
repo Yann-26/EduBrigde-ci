@@ -3,6 +3,9 @@ import { supabaseAdmin } from '@/lib/supabase';
 import { requireAuth } from '@/lib/auth';
 import { uploadMultipleFiles } from '@/lib/storage';
 
+// Force dynamic - no static generation
+export const dynamic = 'force-dynamic';
+
 export async function POST(request, { params }) {
     try {
         const { id } = params;

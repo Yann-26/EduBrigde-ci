@@ -2,6 +2,10 @@ import { NextResponse } from 'next/server';
 import { supabaseAdmin } from '@/lib/supabase';
 import { uploadFile } from '@/lib/storage';
 
+
+// Force dynamic - no static generation
+export const dynamic = 'force-dynamic';
+
 export async function GET(request, { params }) {
     try {
         const { id } = await params;
