@@ -1,4 +1,3 @@
-// components/admin/Sidebar.jsx
 import React from 'react'
 import {
     FiHome, FiUsers, FiFileText, FiDollarSign, FiSettings,
@@ -52,7 +51,7 @@ function Sidebar({ sidebarOpen, setSidebarOpen, activeTab, setActiveTab }) {
                     {sidebarOpen && (
                         <div>
                             <h1 className="text-xl font-bold bg-gradient-to-r from-blue-400 to-indigo-400 bg-clip-text text-transparent">
-                                EduAdmin
+                                Admin Panel
                             </h1>
                             <p className="text-xs text-slate-400 mt-1">Management Portal</p>
                         </div>

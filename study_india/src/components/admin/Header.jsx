@@ -4,7 +4,7 @@ import {
     FiSettings, FiLogOut, FiHelpCircle
 } from 'react-icons/fi'
 
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000/api'
+const API_URL = import.meta.env.VITE_API_URL || '/api'
 
 function Header({ activeTab, onLogout }) {
     const [showUserMenu, setShowUserMenu] = useState(false)
