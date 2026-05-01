@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
-import Sidebar from '../../components/admin/Sidebar'
+import Sidebar from '../../components/admin/SideBar'
 import Header from '../../components/admin/Header'
 import DashBoard from './Dashboard'
 import Applications from './Applications'
