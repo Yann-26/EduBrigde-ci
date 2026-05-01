@@ -65,6 +65,56 @@ function Apply() {
         }
     }
 
+    const [formData, setFormData] = useState({
+        name: '',
+        country: '',
+        phone: '',
+        email: '',
+        course: '',
+        university: universityId || '',
+        educationLevel: ''
+    })
+
+    const [files, setFiles] = useState({
+        passport: null,
+        bepc: null,
+        bac: null,
+        birthCertificate: null,
+        healthCertificate: null,
+        collegeL1S1: null,
+        collegeL1S2: null,
+        collegeL2S1: null,
+        collegeL2S2: null,
+        collegeL3S1: null,
+        collegeL3S2: null,
+        other: null
+    })
+
+
+    const handleChange = (e) => {
+        const { name, value } = e.target
+        setFormData({ ...formData, [name]: value })
+    }
+
+    const handleFileChange = (e) => {
+        setFiles({ ...files, [e.target.name]: e.target.files[0] })
+    }
+
+    const inputClasses = "w-full px-4 py-3.5 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-colors font-medium text-gray-700 outline-none"
+
+    const isMasterApplication = (course) => {
+        return course.toLowerCase().includes('master') || course.toLowerCase().includes('m.sc') || course.toLowerCase().includes('mba')
+    }
+
+    const handleCourseChange = (e) => {
+        const course = e.target.value
+        setFormData({
+            ...formData,
+            course: course,
+            educationLevel: isMasterApplication(course) ? 'master' : 'bachelor'
+        })
+    }
+
     const handleSubmit = async (e) => {
         e.preventDefault()
 
