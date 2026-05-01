@@ -2,7 +2,7 @@
 import React, { useState, useEffect } from 'react'
 import Sidebar from '../../components/admin/SideBar'
 import Header from '../../components/admin/Header'
-import Dashboard from './DashBoard'
+import DashBoard from './DashBoard'
 import Applications from './Applications'
 import DocumentVerification from './DocumentVerification'
 import Payments from './Payments'
@@ -90,7 +90,7 @@ function AdminPanel() {
     const renderContent = () => {
         switch (activeTab) {
             case 'dashboard':
-                return <Dashboard />
+                return <DashBoard />
             case 'applications':
                 return <Applications
                     searchTerm={searchTerm}
