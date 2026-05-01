@@ -1,5 +1,5 @@
 import React from 'react'
-import { Routes, Route } from 'react-router-dom'
+import { Routes, Route, useLocation } from 'react-router-dom'
 import Navbar from './components/Navbar'
 import Footer from './components/Footer'
 import Home from './pages/Home'
@@ -10,11 +10,29 @@ import VisaTracker from './pages/VisaTracker'
 import Apply from './pages/Apply'
 import Login from './pages/Login'
 import Register from './pages/Register'
-import AdminPanel from './pages/admin/AdminPanel'
+import AdminPanel from './pages/admin/adminPanel'
 import AdminLogin from './pages/admin/AdminLogin'
 import MyApplications from './pages/MyApplications'
 
 function App() {
+  const location = useLocation()
+  const isAdminRoute = location.pathname.startsWith('/admin')
+
+  // Admin routes - no Navbar, no Footer
+  if (isAdminRoute) {
+    return (
+      <div className="app">
+        <main className="main-content">
+          <Routes>
+            <Route path="/admin/login" element={<AdminLogin />} />
+            <Route path="/admin/*" element={<AdminPanel />} />
+          </Routes>
+        </main>
+      </div>
+    )
+  }
+
+  // Public routes - with Navbar and Footer
   return (
     <div className="app">
       <Navbar />
@@ -28,8 +46,6 @@ function App() {
           <Route path="/visa-guide" element={<VisaGuide />} />
           <Route path="/visa-tracker" element={<VisaTracker />} />
           <Route path="/apply/:universityId" element={<Apply />} />
-          <Route path="/admin/login" element={<AdminLogin />} />
-          <Route path="/admin/*" element={<AdminPanel />} />
           <Route path="/applications" element={<MyApplications />} />
         </Routes>
       </main>

@@ -67,7 +67,7 @@ function Sidebar({ sidebarOpen, setSidebarOpen, activeTab, setActiveTab }) {
             </div>
 
             {/* Scrollable Nav Section */}
-            <div className="flex-1 overflow-y-auto pb-6 scrollbar-thin scrollbar-thumb-slate-700 scrollbar-track-transparent">
+            <div className="flex-1 overflow-y-auto pb-6 [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
                 <nav className="px-3 py-4">
                     {menuSections.map((section, sectionIdx) => (
                         <div key={sectionIdx} className="mb-6 last:mb-0">
