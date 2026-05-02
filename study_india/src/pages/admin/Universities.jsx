@@ -113,10 +113,21 @@ function Universities() {
             const token = localStorage.getItem('token')
 
             // Get the university ID
-            const universityId = isFormData ? data.get('id') : data.id
+            let universityId = null
+
+            if (isFormData) {
+                universityId = data.get('id') || editingUniversity?.id
+            } else {
+                universityId = data.id || editingUniversity?.id
+            }
+
+            console.log('🔄 Updating university:', universityId)
+            console.log('📋 Editing university object:', editingUniversity)
+            console.log('📦 Data received:', data)
 
             if (!universityId) {
-                alert('Error: University ID not found')
+                console.error('❌ No university ID found!')
+                alert('Error: University ID not found. Please try again.')
                 return
             }
 
@@ -131,28 +142,23 @@ function Universities() {
             }
 
             const response = await fetch(url, options)
-            const text = await response.text()
+            const result = await response.json()
 
-            let result
-            try {
-                result = JSON.parse(text)
-            } catch (e) {
-                throw new Error('Server returned invalid response')
-            }
+            console.log('📡 Update response:', result)
 
             if (result.success) {
                 setUniversities(universities.map(u =>
                     u.id === universityId ? { ...u, ...result.data } : u
                 ))
                 setEditingUniversity(null)
-                alert('University updated!')
+                alert('University updated successfully!')
                 fetchUniversities()
             } else {
-                alert(result.error || 'Failed to update')
+                alert(result.error || 'Failed to update university')
             }
         } catch (err) {
-            console.error('Failed to update:', err)
-            alert('Failed to update')
+            console.error('❌ Failed to update university:', err)
+            alert('Failed to update university')
         }
     }
 

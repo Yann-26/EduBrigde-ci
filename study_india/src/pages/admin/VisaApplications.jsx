@@ -3,10 +3,10 @@ import {
     FiSearch, FiEye, FiCheckCircle, FiXCircle, FiClock,
     FiLoader, FiRefreshCw, FiChevronDown, FiChevronUp,
     FiUser, FiMail, FiCalendar, FiLock, FiUnlock,
-    FiFileText, FiDownload, FiMessageSquare
+    FiFileText, FiDownload, FiTrash2
 } from 'react-icons/fi'
 
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000/api'
+const API_URL = import.meta.env.VITE_API_URL || 'api'
 
 function VisaApplications() {
     const [applications, setApplications] = useState([])
@@ -20,6 +20,7 @@ function VisaApplications() {
     const [rejectionReason, setRejectionReason] = useState('')
     const [showRejectForm, setShowRejectForm] = useState(null)
     const [message, setMessage] = useState('')
+    const [deletingApp, setDeletingApp] = useState(null)
 
     useEffect(() => {
         fetchApplications()
@@ -104,7 +105,6 @@ function VisaApplications() {
             setReviewingStep(null)
         }
     }
-
     const rejectStep = async (stepId) => {
         if (!rejectionReason.trim()) {
             alert('Please provide a rejection reason')
@@ -124,12 +124,13 @@ function VisaApplications() {
                 body: JSON.stringify({
                     action: 'reject',
                     reason: rejectionReason,
+                    rejectDocuments: true,  // NEW: also reject documents
                 }),
             })
             const result = await response.json()
 
             if (result.success) {
-                setMessage(`Step rejected. Student will be notified.`)
+                setMessage(`Step and documents rejected. Student will be notified.`)
                 setRejectionReason('')
                 setShowRejectForm(null)
                 if (selectedApp) {
@@ -144,6 +145,49 @@ function VisaApplications() {
             console.error('Failed to reject step:', err)
         } finally {
             setReviewingStep(null)
+        }
+    }
+
+    const deleteVisaApplication = async (appId) => {
+        if (!confirm('Are you sure you want to delete this entire visa application? This cannot be undone.')) return
+
+        try {
+            setDeletingApp(appId)
+            const token = localStorage.getItem('token')
+
+            const response = await fetch(`${API_URL}/visa/admin/applications/${appId}`, {
+                method: 'DELETE',
+                headers: { Authorization: `Bearer ${token}` },
+            })
+
+            // Handle empty response
+            const text = await response.text()
+            let result
+            try {
+                result = JSON.parse(text)
+            } catch (e) {
+                console.error('Failed to parse:', text)
+                // If status is 200-299, consider it success
+                if (response.ok) {
+                    result = { success: true, message: 'Deleted' }
+                } else {
+                    throw new Error('Server returned invalid response')
+                }
+            }
+
+            if (result.success) {
+                setMessage('Visa application deleted successfully!')
+                setSelectedApp(null)
+                await fetchApplications()
+                setTimeout(() => setMessage(''), 3000)
+            } else {
+                alert(result.error || 'Failed to delete application')
+            }
+        } catch (err) {
+            console.error('Failed to delete:', err)
+            alert('Failed to delete application')
+        } finally {
+            setDeletingApp(null)
         }
     }
 
@@ -299,11 +343,26 @@ function VisaApplications() {
                                                 </div>
                                             </div>
                                             <span className={`px-3 py-1 rounded-full text-xs font-semibold ${app.status === 'completed' ? 'bg-green-100 text-green-800' :
-                                                    app.status === 'rejected' ? 'bg-red-100 text-red-800' :
-                                                        'bg-blue-100 text-blue-800'
+                                                app.status === 'rejected' ? 'bg-red-100 text-red-800' :
+                                                    'bg-blue-100 text-blue-800'
                                                 }`}>
                                                 {app.status?.replace('_', ' ')}
                                             </span>
+                                            <button
+                                                onClick={(e) => {
+                                                    e.stopPropagation()
+                                                    deleteVisaApplication(app.id)
+                                                }}
+                                                disabled={deletingApp === app.id}
+                                                className="p-2 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+                                                title="Delete Application"
+                                            >
+                                                {deletingApp === app.id ? (
+                                                    <FiLoader className="animate-spin" size={16} />
+                                                ) : (
+                                                    <FiTrash2 size={16} />
+                                                )}
+                                            </button>
                                             <FiChevronDown className={`text-gray-400 transition-transform ${selectedApp?.id === app.id ? 'rotate-180' : ''}`} />
                                         </div>
                                     </div>

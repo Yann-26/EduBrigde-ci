@@ -202,7 +202,7 @@ export const visaAPI = {
     // Get current user's visa application with all steps
     getMyVisa: () => apiCall('/visa'),
 
-    // Start new visa application (creates 6 steps from templates)
+    // Start new visa application (creates steps from templates)
     startApplication: () =>
         apiCall('/visa', { method: 'POST' }),
 
@@ -232,14 +232,19 @@ export const visaAPI = {
     getApplicationDetail: (appId) =>
         apiCall(`/visa/admin/applications/${appId}`),
 
+    // Admin: Delete entire visa application
+    deleteApplication: (appId) =>
+        apiCall(`/visa/admin/applications/${appId}`, { method: 'DELETE' }),
+
     // Admin: Approve or reject a step
-    reviewStep: (stepId, action, notes, reason) =>
+    reviewStep: (stepId, action, notes, reason, rejectDocuments = true) =>
         apiCall(`/visa/steps/${stepId}`, {
             method: 'PATCH',
             body: JSON.stringify({
-                action,      // 'approve' or 'reject'
-                notes,       // optional admin notes
-                reason,      // required if action is 'reject'
+                action,           // 'approve' or 'reject'
+                notes,            // optional admin notes
+                reason,           // required if action is 'reject'
+                rejectDocuments,  // also reject documents in this step
             }),
         }),
 

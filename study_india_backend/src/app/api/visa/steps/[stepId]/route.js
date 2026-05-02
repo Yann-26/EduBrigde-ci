@@ -101,7 +101,7 @@ export async function PATCH(request, { params }) {
         const admin = await requireAdmin();
         const { stepId } = await params;
         const body = await request.json();
-        const { action, notes, reason } = body;
+        const { action, notes, reason, rejectDocuments } = body;
 
         if (action === 'approve') {
             const { error } = await supabaseAdmin
@@ -113,7 +113,13 @@ export async function PATCH(request, { params }) {
 
             if (error) throw error;
 
-            return NextResponse.json({ success: true, message: 'Step approved' });
+            // Approve all documents for this step
+            await supabaseAdmin
+                .from('visa_documents')
+                .update({ status: 'verified' })
+                .eq('visa_step_id', stepId);
+
+            return NextResponse.json({ success: true, message: 'Step and documents approved' });
 
         } else if (action === 'reject') {
             if (!reason) {
@@ -132,7 +138,15 @@ export async function PATCH(request, { params }) {
 
             if (error) throw error;
 
-            return NextResponse.json({ success: true, message: 'Step rejected' });
+            // Also reject all documents for this step
+            if (rejectDocuments !== false) {
+                await supabaseAdmin
+                    .from('visa_documents')
+                    .update({ status: 'rejected' })
+                    .eq('visa_step_id', stepId);
+            }
+
+            return NextResponse.json({ success: true, message: 'Step and documents rejected' });
 
         } else {
             return NextResponse.json(
