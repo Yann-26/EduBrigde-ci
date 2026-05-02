@@ -1,29 +1,25 @@
 import { NextResponse } from 'next/server';
 import { supabaseAdmin } from '@/lib/supabase';
-import { requireAuth } from '@/lib/auth';
 
-// Force dynamic - no static generation
 export const dynamic = 'force-dynamic';
 
 export async function GET(request, { params }) {
     try {
-        const { id } = params;
+        const { id } = await params;
 
-        // Get application with university and documents
         const { data: application, error } = await supabaseAdmin
             .from('applications')
             .select(`
-        *,
-        university:universities(*),
-        documents(*),
-        assigned_to_user:assigned_to(id, name, email)
-      `)
+                *,
+                university:universities(*),
+                documents(*)
+            `)
             .eq('id', id)
             .single();
 
         if (error || !application) {
             return NextResponse.json(
-                { error: 'Application not found' },
+                { success: false, error: 'Application not found' },
                 { status: 404 }
             );
         }
@@ -33,32 +29,28 @@ export async function GET(request, { params }) {
             data: {
                 id: application.id,
                 applicationId: application.application_id,
-                student: {
-                    name: application.student_name,
-                    email: application.student_email,
-                    phone: application.student_phone,
-                    country: application.student_country,
-                },
+                student_name: application.student_name,
+                student_email: application.student_email,
+                student_phone: application.student_phone,
+                student_country: application.student_country,
                 university: application.university,
                 course: application.course,
                 status: application.status,
-                paymentStatus: application.payment_status,
+                payment_status: application.payment_status,
                 amount: application.amount,
-                paymentMethod: application.payment_method,
-                transactionId: application.transaction_id,
+                transaction_id: application.transaction_id,
                 documents: application.documents,
                 timeline: application.timeline,
                 notes: application.notes,
-                assignedTo: application.assigned_to_user,
-                createdAt: application.created_at,
-                updatedAt: application.updated_at,
+                created_at: application.created_at,
+                updated_at: application.updated_at,
             },
         });
 
     } catch (error) {
         console.error('Get application error:', error);
         return NextResponse.json(
-            { error: 'Failed to fetch application' },
+            { success: false, error: error.message },
             { status: 500 }
         );
     }
@@ -66,8 +58,7 @@ export async function GET(request, { params }) {
 
 export async function PUT(request, { params }) {
     try {
-        await requireAuth();
-        const { id } = params;
+        const { id } = await params;
         const body = await request.json();
 
         const updateData = {};
@@ -79,15 +70,21 @@ export async function PUT(request, { params }) {
             }
         });
 
+        updateData.updated_at = new Date().toISOString();
+
         const { data: application, error } = await supabaseAdmin
             .from('applications')
             .update(updateData)
             .eq('id', id)
-            .select()
+            .select('*')
             .single();
 
         if (error) {
-            throw error;
+            console.error('Update error:', error);
+            return NextResponse.json(
+                { success: false, error: error.message },
+                { status: 500 }
+            );
         }
 
         return NextResponse.json({
@@ -98,7 +95,7 @@ export async function PUT(request, { params }) {
     } catch (error) {
         console.error('Update application error:', error);
         return NextResponse.json(
-            { error: 'Failed to update application' },
+            { success: false, error: error.message },
             { status: 500 }
         );
     }

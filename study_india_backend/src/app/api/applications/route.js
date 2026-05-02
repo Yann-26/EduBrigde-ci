@@ -64,7 +64,7 @@ export async function POST(request) {
                 course,
                 status: 'pending',
                 payment_status: 'pending',
-                amount: 'ZMW 75',
+                amount: 'XOF 0',
                 timeline: JSON.stringify([{
                     action: 'application_submitted',
                     description: 'Application submitted successfully',

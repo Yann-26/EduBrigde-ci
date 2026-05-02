@@ -134,22 +134,45 @@ function Applications({ searchTerm, setSearchTerm, statusFilter, setStatusFilter
     const bulkUpdateStatus = async (newStatus) => {
         if (!confirm(`Update ${selectedApps.length} applications to ${newStatus}?`)) return
 
+        setBulkUpdating(true)
         try {
             const token = localStorage.getItem('token')
+            let successCount = 0
+            let failCount = 0
+
             for (const appId of selectedApps) {
-                await fetch(`${API_URL}/applications/${appId}/status`, {
-                    method: 'PUT',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        Authorization: `Bearer ${token}`,
-                    },
-                    body: JSON.stringify({ status: newStatus }),
-                })
+                try {
+                    const response = await fetch(`${API_URL}/applications/${appId}/status`, {
+                        method: 'PUT',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            Authorization: `Bearer ${token}`,
+                        },
+                        body: JSON.stringify({ status: newStatus }),
+                    })
+                    const result = await response.json()
+
+                    if (result.success) {
+                        successCount++
+                    } else {
+                        failCount++
+                        console.error(`Failed to update ${appId}:`, result.error)
+                    }
+                } catch (err) {
+                    failCount++
+                    console.error(`Error updating ${appId}:`, err)
+                }
             }
+
             setSelectedApps([])
             fetchApplications()
+
+            alert(`Bulk update complete: ${successCount} succeeded, ${failCount} failed`)
         } catch (err) {
             console.error('Bulk update failed:', err)
+            alert('Bulk update failed')
+        } finally {
+            setBulkUpdating(false)
         }
     }
 

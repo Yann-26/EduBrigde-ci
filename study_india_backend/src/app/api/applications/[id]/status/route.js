@@ -1,86 +1,57 @@
 import { NextResponse } from 'next/server';
 import { supabaseAdmin } from '@/lib/supabase';
-import { requireAuth } from '@/lib/auth';
 import { sendStatusUpdateEmail } from '@/lib/email';
 
-// Force dynamic - no static generation
 export const dynamic = 'force-dynamic';
 
 export async function PUT(request, { params }) {
     try {
-        const user = await requireAuth();
-        const { id } = params;
+        const { id } = await params;
         const body = await request.json();
-        const { status, notes } = body;
+        const { status } = body;
 
+        console.log('Status update:', { id, status });
+
+        // Validate
         const validStatuses = ['pending', 'under_review', 'approved', 'rejected'];
-        if (!validStatuses.includes(status)) {
-            return NextResponse.json(
-                { error: 'Invalid status' },
-                { status: 400 }
-            );
+        if (!status || !validStatuses.includes(status)) {
+            return NextResponse.json({ success: false, error: 'Invalid status' }, { status: 400 });
         }
 
-        // Get current application
-        const { data: application } = await supabaseAdmin
-            .from('applications')
-            .select('timeline, student_name, student_email, application_id')
-            .eq('id', id)
-            .single();
-
-        if (!application) {
-            return NextResponse.json(
-                { error: 'Application not found' },
-                { status: 404 }
-            );
-        }
-
-        // Update timeline
-        const timeline = application.timeline || [];
-        timeline.push({
-            action: `status_changed_to_${status}`,
-            description: notes || `Application status changed to ${status}`,
-            performedBy: user.id,
-            timestamp: new Date().toISOString(),
-        });
-
-        // Update application
+        // Simple update - JUST the status field, no timeline
         const { data: updated, error } = await supabaseAdmin
             .from('applications')
             .update({
-                status,
-                timeline,
-                notes: notes || application.notes,
+                status: status,
+                updated_at: new Date().toISOString()
             })
             .eq('id', id)
-            .select()
+            .select('id, status, application_id')
             .single();
 
         if (error) {
-            throw error;
+            console.error('Update error:', error.message);
+            console.error('Full error:', JSON.stringify(error));
+            return NextResponse.json({
+                success: false,
+                error: error.message,
+                details: error.details,
+                hint: error.hint
+            }, { status: 500 });
         }
 
-        // Send email notification
-        try {
-            await sendStatusUpdateEmail(
-                application.student_email,
-                application.student_name,
-                status,
-                application.application_id
-            );
-        } catch (emailError) {
-            console.error('Failed to send status update email:', emailError);
-        }
+        console.log('✅ Status updated:', updated?.application_id, '→', status);
 
         return NextResponse.json({
             success: true,
+            message: `Status updated to ${status}`,
             data: updated,
         });
 
     } catch (error) {
         console.error('Update status error:', error);
         return NextResponse.json(
-            { error: 'Failed to update status' },
+            { success: false, error: error.message || 'Failed to update status' },
             { status: 500 }
         );
     }
