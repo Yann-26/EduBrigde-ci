@@ -3,6 +3,8 @@ import { supabaseAdmin } from '@/lib/supabase';
 import { requireAuth, requireAdmin } from '@/lib/auth';
 import { uploadMultipleFiles } from '@/lib/storage';
 
+export const dynamic = 'force-dynamic';
+
 // PUT - User submits a step for review
 export async function PUT(request, { params }) {
     try {
