@@ -13,6 +13,7 @@ import Register from './pages/Register'
 import AdminPanel from './pages/admin/AdminPanel'
 import AdminLogin from './pages/admin/AdminLogin'
 import MyApplications from './pages/MyApplications'
+import PaymentCallback from './pages/PaymentCallback'
 
 function App() {
   const location = useLocation()
@@ -46,6 +47,7 @@ function App() {
           <Route path="/visa-guide" element={<VisaGuide />} />
           <Route path="/visa-tracker" element={<VisaTracker />} />
           <Route path="/apply/:universityId" element={<Apply />} />
+          <Route path="/payment/callback" element={<PaymentCallback />} />
           <Route path="/applications" element={<MyApplications />} />
         </Routes>
       </main>

@@ -299,6 +299,26 @@ export const uploadAPI = {
         }),
 };
 
+// ==================== Paystack Payment APIs ====================
+export const paystackAPI = {
+    // Initialize payment
+    initialize: (data) =>
+        apiCall('/payments/paystack/initialize', {
+            method: 'POST',
+            body: JSON.stringify(data),
+        }),
+
+    // Verify payment by reference
+    verify: (reference) =>
+        apiCall(`/payments/paystack/verify/${reference}`),
+
+    // Get payment history for user
+    getHistory: (params = {}) => {
+        const query = new URLSearchParams(params).toString();
+        return apiCall(`/payments/paystack/history?${query}`);
+    },
+};
+
 // ==================== Settings API ====================
 export const settingsAPI = {
     get: () => apiCall('/settings'),
@@ -315,6 +335,7 @@ export default {
     universities: universitiesAPI,
     applications: applicationsAPI,
     payments: paymentsAPI,
+    paystack: paystackAPI, 
     dashboard: dashboardAPI,
     users: usersAPI,
     notifications: notificationsAPI,

@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react'
 import { useParams, Link, useNavigate } from 'react-router-dom'
-import { FiUploadCloud, FiCheck, FiArrowLeft, FiMessageCircle, FiLoader, FiLock } from 'react-icons/fi'
+import { FiUploadCloud, FiCheck, FiArrowLeft, FiMessageCircle, FiLoader, FiLock, FiCreditCard, FiAlertCircle } from 'react-icons/fi'
 import { useAuth } from '../context/AuthContext'
 
 const API_URL = import.meta.env.VITE_API_URL || '/api'
@@ -16,6 +16,22 @@ function Apply() {
     const [error, setError] = useState('')
     const [success, setSuccess] = useState('')
     const [hasApplied, setHasApplied] = useState(false)
+    // Payment states
+    const [paymentReference, setPaymentReference] = useState(null)
+    const [paymentVerified, setPaymentVerified] = useState(false)
+    const [checkingPayment, setCheckingPayment] = useState(false)
+    const [paystackLoading, setPaystackLoading] = useState(false)
+
+    // Check URL for payment callback when returning from Paystack
+    useEffect(() => {
+        const urlParams = new URLSearchParams(window.location.search)
+        const reference = urlParams.get('reference')
+        if (reference) {
+            verifyPayment(reference)
+            // Clean URL
+            window.history.replaceState({}, '', window.location.pathname)
+        }
+    }, [])
 
     useEffect(() => {
         if (!authLoading && !user) {
@@ -106,6 +122,64 @@ function Apply() {
         return course.toLowerCase().includes('master') || course.toLowerCase().includes('m.sc') || course.toLowerCase().includes('mba')
     }
 
+    const handlePayment = async () => {
+        try {
+            setPaystackLoading(true)
+            const token = getToken()
+
+            const response = await fetch(`${API_URL}/payments/paystack/initialize`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    Authorization: `Bearer ${token}`,
+                },
+                body: JSON.stringify({
+                    email: formData.email || user.email,
+                    amount: 1, // $1 USD equivalent in XOF
+                    applicationId: null, // Will be set after application is submitted
+                }),
+            })
+
+            const result = await response.json()
+
+            if (result.success) {
+                // Redirect to Paystack payment page
+                window.location.href = result.data.authorization_url
+            } else {
+                alert(result.error || 'Payment initialization failed')
+            }
+        } catch (err) {
+            console.error('Payment error:', err)
+        } finally {
+            setPaystackLoading(false)
+        }
+    }
+
+    const verifyPayment = async (reference) => {
+        try {
+            setCheckingPayment(true)
+            const token = getToken()
+
+            const response = await fetch(`${API_URL}/payments/paystack/verify/${reference}`, {
+                headers: { Authorization: `Bearer ${token}` },
+            })
+            const result = await response.json()
+
+            if (result.success && result.data?.status === 'success') {
+                setPaymentReference(reference)
+                setPaymentVerified(true)
+                setError('')
+            } else {
+                setError('Payment verification failed. Please try again.')
+            }
+        } catch (err) {
+            console.error('Verification error:', err)
+            setError('Failed to verify payment')
+        } finally {
+            setCheckingPayment(false)
+        }
+    }
+
     const handleCourseChange = (e) => {
         const course = e.target.value
         setFormData({
@@ -123,6 +197,12 @@ function Apply() {
             return
         }
 
+        // CHECK PAYMENT FIRST
+        if (!paymentVerified) {
+            setError('⚠️ Please complete the payment before submitting your application.')
+            return
+        }
+
         setSubmitting(true)
         setError('')
 
@@ -135,6 +215,7 @@ function Apply() {
             formDataToSend.append('country', formData.country)
             formDataToSend.append('university', formData.university)
             formDataToSend.append('course', formData.course)
+            formDataToSend.append('payment_reference', paymentReference) // Include payment ref
 
             // Add all documents
             Object.keys(files).forEach(docName => {
@@ -413,16 +494,58 @@ function Apply() {
                     <div className="bg-gradient-to-r from-emerald-500 to-teal-600 p-8 md:p-10 rounded-3xl text-white shadow-xl flex flex-col md:flex-row items-center justify-between gap-8">
                         <div>
                             <h2 className="text-2xl font-bold mb-2">Application Fee</h2>
-                            <p className="text-emerald-100 mb-4">Complete your application by paying the processing fee.</p>
-                            <div className="text-3xl font-black bg-white/20 inline-block px-4 py-2 rounded-xl backdrop-blur-sm">XOF75</div>
+                            <p className="text-emerald-100 mb-4">Secure payment via Paystack</p>
+                            <div className="text-3xl font-black bg-white/20 inline-block px-4 py-2 rounded-xl backdrop-blur-sm">
+                                XOF 500
+                            </div>
                         </div>
-                        <a href="https://wa.me/919876543210" target="_blank" rel="noopener noreferrer" className="bg-white text-emerald-600 px-8 py-4 rounded-full font-bold text-lg hover:shadow-lg hover:scale-105 transition-all flex items-center gap-3 w-full md:w-auto justify-center">
-                            <FiMessageCircle className="text-2xl" /> Pay via WhatsApp
-                        </a>
+
+                        <button
+                            onClick={handlePayment}
+                            disabled={paystackLoading}
+                            className="bg-white text-emerald-600 px-8 py-4 rounded-full font-bold text-lg hover:shadow-lg hover:scale-105 transition-all flex items-center gap-3 w-full md:w-auto justify-center disabled:opacity-50"
+                        >
+                            {paystackLoading ? (
+                                <><FiLoader className="animate-spin" /> Processing...</>
+                            ) : (
+                                <><FiCreditCard /> Pay with Paystack</>
+                            )}
+                        </button>
                     </div>
 
-                    <button type="submit" disabled={submitting} className="w-full bg-indigo-600 text-white text-xl font-bold py-5 rounded-2xl hover:bg-indigo-700 shadow-xl shadow-indigo-600/30 hover:-translate-y-1 transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2">
-                        {submitting ? (<><FiLoader className="animate-spin" /> Submitting...</>) : ('🎓 Submit Application')}
+                    {/* Show payment status message */}
+                    {paymentVerified ? (
+                        <div className="mb-6 bg-green-50 border border-green-200 rounded-2xl p-4 flex items-center gap-3">
+                            <FiCheckCircle className="text-green-500 text-xl" />
+                            <div>
+                                <p className="text-green-800 font-medium">✅ Payment Confirmed</p>
+                                <p className="text-green-600 text-sm">Reference: {paymentReference}</p>
+                            </div>
+                        </div>
+                    ) : (
+                        <div className="mb-6 bg-amber-50 border border-amber-200 rounded-2xl p-4">
+                            <p className="text-amber-800 text-sm flex items-center gap-2">
+                                <FiAlertCircle /> Please complete the payment above to enable submission.
+                            </p>
+                        </div>
+                    )}
+
+                    {/* Submit Button - Disabled until payment */}
+                    <button
+                        type="submit"
+                        disabled={submitting || !paymentVerified}
+                        className={`w-full text-xl font-bold py-5 rounded-2xl shadow-xl transition-all flex items-center justify-center gap-2 ${!paymentVerified
+                            ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
+                            : 'bg-indigo-600 text-white hover:bg-indigo-700 shadow-indigo-600/30 hover:-translate-y-1'
+                            }`}
+                    >
+                        {!paymentVerified ? (
+                            '💳 Complete Payment to Submit'
+                        ) : submitting ? (
+                            <><FiLoader className="animate-spin" /> Submitting...</>
+                        ) : (
+                            '🎓 Submit Application'
+                        )}
                     </button>
                 </form>
             </div>

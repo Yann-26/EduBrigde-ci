@@ -4,7 +4,7 @@ import {
     FiDollarSign, FiUsers, FiFileText, FiCheckCircle, FiLoader, FiRefreshCw, FiCheckSquare
 } from 'react-icons/fi'
 
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000/api'
+const API_URL = import.meta.env.VITE_API_URL || '/api'
 
 const COLORS = ['#4F46E5', '#10B981', '#F59E0B', '#EF4444', '#8B5CF6', '#EC4899', '#06B6D4', '#84CC16', '#F97316', '#6366F1']
 
@@ -93,7 +93,7 @@ function Reports() {
         }
 
         // Create CSV content
-        let csvContent = 'Month,Applications,Approved,Revenue (ZMW)\n'
+        let csvContent = 'Month,Applications,Approved,Revenue (XOF)\n'
 
         applicationTrends.forEach(row => {
             csvContent += `${row.month},${row.applications},${row.approved || 0},${row.revenue || 0}\n`
@@ -184,7 +184,7 @@ function Reports() {
 
             <h2>Monthly Trends</h2>
             <table>
-                <tr><th>Month</th><th>Applications</th><th>Approved</th><th>Revenue (ZMW)</th></tr>
+                <tr><th>Month</th><th>Applications</th><th>Approved</th><th>Revenue (XOF)</th></tr>
                 ${applicationTrends.map(row => `
                     <tr>
                         <td>${row.month}</td>
@@ -338,7 +338,7 @@ function Reports() {
                         </div>
                     )}
                     <div className="flex justify-center gap-6 mt-6 pt-4 border-t border-gray-100">
-                        <div className="flex items-center gap-2"><div className="w-3 h-3 bg-purple-500 rounded"></div><span className="text-xs text-gray-600">Revenue (ZMW)</span></div>
+                        <div className="flex items-center gap-2"><div className="w-3 h-3 bg-purple-500 rounded"></div><span className="text-xs text-gray-600">Revenue (XOF)</span></div>
                     </div>
                 </div>
 
