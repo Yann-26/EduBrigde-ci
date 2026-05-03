@@ -15,6 +15,7 @@ import AdminLogin from './pages/admin/AdminLogin'
 import Dashboard from './pages/Dashboard'
 import PaymentCallback from './pages/PaymentCallback'
 import AddUniversity from './pages/admin/AddUniversity'
+import Receipt from './pages/Receipt'
 
 function App() {
   const location = useLocation()
