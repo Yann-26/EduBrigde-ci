@@ -19,20 +19,6 @@ import AddUniversity from './pages/admin/AddUniversity'
 function App() {
   const location = useLocation()
   const isAdminRoute = location.pathname.startsWith('/admin')
-  const isPaymentCallback = location.pathname.startsWith('/payment')
-
-  // Payment callback - standalone, no navbar/footer
-  if (isPaymentCallback) {
-    return (
-      <div className="app">
-        <main className="main-content">
-          <Routes>
-            <Route path="/payment/callback" element={<PaymentCallback />} />
-          </Routes>
-        </main>
-      </div>
-    )
-  }
 
   // Admin routes - no Navbar, no Footer
   if (isAdminRoute) {
@@ -64,6 +50,7 @@ function App() {
           <Route path="/visa-guide" element={<VisaGuide />} />
           <Route path="/visa-tracker" element={<VisaTracker />} />
           <Route path="/apply/:universityId" element={<Apply />} />
+          <Route path="/payment/callback" element={<PaymentCallback />} />
           <Route path="/applications" element={<MyApplications />} />
         </Routes>
       </main>

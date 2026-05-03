@@ -1,10 +1,12 @@
 import React, { useEffect, useState } from 'react'
+import { useNavigate, useSearchParams } from 'react-router-dom'
 import { FiLoader, FiCheckCircle, FiXCircle } from 'react-icons/fi'
 
 const API_URL = import.meta.env.VITE_API_URL || '/api'
 
 function PaymentCallback() {
-    const [searchParams] = new URLSearchParams(window.location.search)
+    const [searchParams] = useSearchParams()
+    const navigate = useNavigate()
     const [status, setStatus] = useState('verifying')
     const [message, setMessage] = useState('Verifying your payment...')
 
@@ -24,7 +26,7 @@ function PaymentCallback() {
     const verifyPayment = async (reference) => {
         try {
             const token = localStorage.getItem('token')
-
+            
             const response = await fetch(`${API_URL}/payments/paystack/verify/${reference}`, {
                 headers: { Authorization: `Bearer ${token}` },
             })
@@ -32,17 +34,17 @@ function PaymentCallback() {
 
             if (result.success && result.data?.status === 'success') {
                 setStatus('success')
-                setMessage('Payment confirmed! You can close this tab now.')
-
-                // SAVE to localStorage so the apply page can pick it up
-                localStorage.setItem('payment_verified_ref', reference)
-                localStorage.setItem('payment_verified_status', 'true')
+                setMessage('Payment confirmed! Redirecting to your application...')
+                
+                // Store payment reference in localStorage
+                localStorage.setItem('payment_reference', reference)
+                localStorage.setItem('payment_verified', 'true')
                 localStorage.setItem('payment_amount', result.data.amount / 100)
-
-                // Auto-close after 3 seconds
+                
+                // Go back to the previous page after 2 seconds
                 setTimeout(() => {
-                    window.close()
-                }, 3000)
+                    navigate(-1) // Go back to apply page
+                }, 2000)
             } else {
                 setStatus('error')
                 setMessage(result.data?.gateway_response || 'Payment verification failed')
@@ -62,23 +64,31 @@ function PaymentCallback() {
                         <h2 className="text-xl font-bold text-gray-900 mb-2">Verifying Payment</h2>
                     </>
                 )}
-
+                
                 {status === 'success' && (
                     <>
                         <FiCheckCircle className="text-4xl text-green-500 mx-auto mb-4" />
                         <h2 className="text-xl font-bold text-green-700 mb-2">Payment Successful!</h2>
-                        <p className="text-sm text-gray-500 mt-2">This tab will close automatically...</p>
                     </>
                 )}
-
+                
                 {status === 'error' && (
                     <>
                         <FiXCircle className="text-4xl text-red-500 mx-auto mb-4" />
                         <h2 className="text-xl font-bold text-red-700 mb-2">Payment Failed</h2>
                     </>
                 )}
-
-                <p className="text-gray-600 mt-2">{message}</p>
+                
+                <p className="text-gray-600">{message}</p>
+                
+                {status === 'error' && (
+                    <button 
+                        onClick={() => navigate(-1)} 
+                        className="mt-6 px-6 py-3 bg-indigo-600 text-white rounded-xl hover:bg-indigo-700"
+                    >
+                        Go Back & Try Again
+                    </button>
+                )}
             </div>
         </div>
     )

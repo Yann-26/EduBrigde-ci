@@ -175,31 +175,37 @@ function Apply() {
         }
     }
 
-    const handlePayment = async () => {
+    const handlePayAndSubmit = async () => {
+        if (hasApplied) {
+            setError('You have already applied to this university.')
+            return
+        }
+
+        // Validate all steps first
+        if (!validateStep1() || !validateStep2()) {
+            goToStep(!validateStep1() ? 1 : 2)
+            return
+        }
+
+        setSubmitting(true)
+        setError('')
+
         try {
-            setPaystackLoading(true)
             const token = getToken()
             const email = formData.email || user?.email
 
             if (!email) {
-                alert('Please enter your email address first')
-                setPaystackLoading(false)
+                setError('Please enter your email address')
+                setSubmitting(false)
                 return
             }
 
-            // SAVE form data to localStorage before opening payment
+            // Save form data
             localStorage.setItem('apply_form_data', JSON.stringify(formData))
             localStorage.setItem('apply_university_id', universityId)
 
-            // Also save file names (can't save File objects)
-            const fileNames = {}
-            Object.keys(files).forEach(key => {
-                if (files[key]) fileNames[key] = files[key].name
-            })
-            localStorage.setItem('apply_file_names', JSON.stringify(fileNames))
-
-            // Initialize payment
-            const response = await fetch(`${API_URL}/payments/paystack/initialize`, {
+            // Initialize Paystack payment
+            const payResponse = await fetch(`${API_URL}/payments/paystack/initialize`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
@@ -208,56 +214,157 @@ function Apply() {
                 body: JSON.stringify({
                     email,
                     amount: 1,
-                    callback_url: `${window.location.origin}/payment/callback`
+                    callback_url: `${window.location.origin}/payment/callback?auto_submit=true&university_id=${universityId}`
                 }),
+            })
+
+            const payResult = await payResponse.json()
+
+            if (payResult.success && payResult.data) {
+                // Save payment reference for later
+                localStorage.setItem('pending_payment_ref', payResult.data.reference)
+                localStorage.setItem('pending_payment_uni', universityId)
+
+                // Open Paystack in new tab
+                const paymentWindow = window.open(payResult.data.authorization_url, '_blank')
+
+                if (!paymentWindow) {
+                    alert('Please allow popups to complete payment.')
+                    setSubmitting(false)
+                    return
+                }
+
+                // Start polling for payment
+                let attempts = 0
+                const checkPayment = setInterval(async () => {
+                    attempts++
+
+                    // Check if payment was verified by the callback page
+                    const verifiedRef = localStorage.getItem('payment_verified_ref')
+
+                    if (verifiedRef) {
+                        clearInterval(checkPayment)
+                        localStorage.removeItem('payment_verified_ref')
+                        localStorage.removeItem('payment_verified_status')
+                        localStorage.removeItem('pending_payment_ref')
+
+                        // NOW SUBMIT THE APPLICATION
+                        await submitApplication(token, verifiedRef)
+
+                    } else if (attempts > 60) {
+                        // Timeout after 2 minutes
+                        clearInterval(checkPayment)
+                        setSubmitting(false)
+                        setError('Payment timeout. Please try again or contact support.')
+                    }
+                }, 2000)
+
+            } else {
+                setError(payResult.error || 'Payment initialization failed')
+                setSubmitting(false)
+            }
+        } catch (err) {
+            console.error('Error:', err)
+            setError('Failed to process. Please try again.')
+            setSubmitting(false)
+        }
+    }
+
+    // Separate function to submit application after payment
+    const submitApplication = async (token, paymentRef) => {
+        try {
+            // Restore form data
+            const savedData = localStorage.getItem('apply_form_data')
+            let submitFormData = formData
+            if (savedData) {
+                try {
+                    const parsed = JSON.parse(savedData)
+                    submitFormData = { ...submitFormData, ...parsed }
+                } catch (e) { }
+            }
+
+            const formDataToSend = new FormData()
+            formDataToSend.append('name', submitFormData.name || user.name)
+            formDataToSend.append('email', submitFormData.email || user.email)
+            formDataToSend.append('phone', submitFormData.phone)
+            formDataToSend.append('country', submitFormData.country)
+            formDataToSend.append('university', universityId)
+            formDataToSend.append('course', submitFormData.course)
+            formDataToSend.append('payment_reference', paymentRef)
+
+            // Add all documents
+            Object.keys(files).forEach(docName => {
+                if (files[docName]) {
+                    formDataToSend.append('documents', files[docName])
+                    formDataToSend.append('documentNames', docName)
+                }
+            })
+
+            const response = await fetch(`${API_URL}/applications`, {
+                method: 'POST',
+                headers: { Authorization: `Bearer ${token}` },
+                body: formDataToSend,
             })
 
             const result = await response.json()
 
-            if (result.success && result.data) {
-                // OPEN IN NEW TAB
-                const paymentWindow = window.open(result.data.authorization_url, '_blank')
+            if (response.ok && result.success) {
+                setSuccess(`✅ Application submitted! ID: ${result.data.applicationId}`)
+                setPaymentReference(paymentRef)
+                setPaymentVerified(true)
+                setCompletedSteps([1, 2, 3])
 
-                if (!paymentWindow) {
-                    alert('Please allow popups for this site to complete payment.')
-                }
+                // Clean up
+                localStorage.removeItem('apply_form_data')
+                localStorage.removeItem('apply_university_id')
+                localStorage.removeItem('apply_file_names')
+                localStorage.removeItem('pending_payment_ref')
+                localStorage.removeItem('pending_payment_uni')
 
-                // Poll for payment completion from localStorage
-                const checkPaymentInterval = setInterval(() => {
-                    const verifiedRef = localStorage.getItem('payment_verified_ref')
-                    const verifiedStatus = localStorage.getItem('payment_verified_status')
-
-                    if (verifiedStatus === 'true' && verifiedRef) {
-                        clearInterval(checkPaymentInterval)
-                        setPaymentReference(verifiedRef)
-                        setPaymentVerified(true)
-
-                        // Restore form data
-                        const savedData = localStorage.getItem('apply_form_data')
-                        if (savedData) {
-                            try {
-                                const parsed = JSON.parse(savedData)
-                                setFormData(prev => ({ ...prev, ...parsed }))
-                            } catch (e) { }
-                        }
-
-                        // Clean up
-                        localStorage.removeItem('payment_verified_ref')
-                        localStorage.removeItem('payment_verified_status')
-                    }
-                }, 2000)
-
-                // Stop checking after 5 minutes
-                setTimeout(() => clearInterval(checkPaymentInterval), 300000)
-
+                setTimeout(() => navigate('/universities'), 3000)
             } else {
-                alert(result.error || 'Payment initialization failed')
+                throw new Error(result.error || 'Submission failed')
             }
         } catch (err) {
-            console.error('Payment error:', err)
-            alert('Failed to initialize payment')
+            setError('Payment successful but submission failed: ' + err.message + '. Please contact support with ref: ' + paymentRef)
         } finally {
-            setPaystackLoading(false)
+            setSubmitting(false)
+        }
+    }
+
+    // Update the verifyPayment to also submit if auto_submit is true
+    const verifyPayment = async (reference) => {
+        try {
+            setCheckingPayment(true)
+            const token = getToken()
+
+            const response = await fetch(`${API_URL}/payments/paystack/verify/${reference}`, {
+                headers: { Authorization: `Bearer ${token}` },
+            })
+            const result = await response.json()
+
+            if (result.success && result.data?.status === 'success') {
+                setPaymentReference(reference)
+                setPaymentVerified(true)
+
+                // Check if auto_submit was requested
+                const urlParams = new URLSearchParams(window.location.search)
+                const autoSubmit = urlParams.get('auto_submit')
+
+                if (autoSubmit === 'true') {
+                    // Auto submit the application
+                    await submitApplication(token, reference)
+                }
+
+                setError('')
+            } else {
+                setError('Payment verification failed.')
+            }
+        } catch (err) {
+            console.error('Verification error:', err)
+            setError('Failed to verify payment')
+        } finally {
+            setCheckingPayment(false)
         }
     }
 
@@ -671,40 +778,70 @@ function Apply() {
                 {/* STEP 3: Payment & Submit */}
                 {currentStep === 3 && (
                     <div className="space-y-6">
-                        <div className="bg-gradient-to-r from-emerald-500 to-teal-600 p-8 md:p-10 rounded-3xl text-white shadow-xl flex flex-col md:flex-row items-center justify-between gap-8">
-                            <div>
-                                <h2 className="text-2xl font-bold mb-2">Application Fee</h2>
-                                <p className="text-emerald-100 mb-4">Secure payment via Paystack</p>
-                                <div className="text-3xl font-black bg-white/20 inline-block px-4 py-2 rounded-xl backdrop-blur-sm">XOF 500</div>
+                        <div className="bg-gradient-to-r from-emerald-500 to-teal-600 p-8 md:p-10 rounded-3xl text-white shadow-xl">
+                            <h2 className="text-2xl font-bold mb-2">Ready to Submit</h2>
+                            <p className="text-emerald-100 mb-6">
+                                Click the button below to pay the application fee and submit your application in one step.
+                            </p>
+
+                            <div className="bg-white/10 rounded-2xl p-6 mb-6">
+                                <div className="flex justify-between items-center mb-2">
+                                    <span className="text-emerald-100">Application Fee</span>
+                                    <span className="text-white font-bold">XOF 500</span>
+                                </div>
+                                <div className="flex justify-between items-center">
+                                    <span className="text-emerald-100">Payment Method</span>
+                                    <span className="text-white font-bold">Paystack</span>
+                                </div>
                             </div>
-                            <button onClick={handlePayment} disabled={paystackLoading || paymentVerified}
-                                className={`px-8 py-4 rounded-full font-bold text-lg flex items-center gap-3 transition-all ${paymentVerified ? 'bg-green-400 text-white cursor-not-allowed' : 'bg-white text-emerald-600 hover:shadow-lg hover:scale-105'
-                                    }`}>
-                                {paymentVerified ? <><FiCheckCircle /> Paid</> : paystackLoading ? <><FiLoader className="animate-spin" /> Processing...</> : <><FiCreditCard /> Pay with Paystack</>}
-                            </button>
+
+                            {paymentVerified ? (
+                                <div className="bg-green-400/30 rounded-xl p-4 text-center">
+                                    <FiCheckCircle className="text-3xl mx-auto mb-2" />
+                                    <p className="font-bold">✅ Payment Confirmed</p>
+                                    <p className="text-sm opacity-80">Ref: {paymentReference}</p>
+                                </div>
+                            ) : (
+                                <p className="text-sm text-emerald-100 text-center mb-4">
+                                    Payment will open in a new tab. After payment, your application will be submitted automatically.
+                                </p>
+                            )}
                         </div>
 
-                        {paymentVerified ? (
-                            <div className="bg-green-50 border border-green-200 rounded-2xl p-4 flex items-center gap-3">
-                                <FiCheckCircle className="text-green-500 text-xl" />
-                                <div><p className="text-green-800 font-medium">✅ Payment Confirmed</p><p className="text-green-600 text-sm">Ref: {paymentReference}</p></div>
-                            </div>
-                        ) : (
-                            <div className="bg-amber-50 border border-amber-200 rounded-2xl p-4">
-                                <p className="text-amber-800 text-sm flex items-center gap-2"><FiAlertCircle /> Complete payment to enable submission.</p>
-                            </div>
-                        )}
-
-                        <div className="flex justify-between">
+                        <div className="flex justify-between items-center">
                             <button onClick={() => goToStep(2)} className="px-6 py-3 bg-gray-100 text-gray-700 rounded-xl font-bold hover:bg-gray-200 flex items-center gap-2">
                                 <FiChevronLeft /> Back
                             </button>
-                            <button onClick={handleSubmit} disabled={submitting || !paymentVerified}
-                                className={`px-8 py-3 rounded-xl font-bold text-lg flex items-center gap-2 transition-all ${!paymentVerified ? 'bg-gray-300 text-gray-500 cursor-not-allowed' : 'bg-indigo-600 text-white hover:bg-indigo-700 shadow-lg shadow-indigo-600/30 hover:-translate-y-1'
-                                    }`}>
-                                {submitting ? <><FiLoader className="animate-spin" /> Submitting...</> : '🎓 Submit Application'}
+
+                            <button
+                                onClick={handlePayAndSubmit}
+                                disabled={submitting || paymentVerified}
+                                className={`px-8 py-4 rounded-xl font-bold text-lg flex items-center gap-2 transition-all ${paymentVerified
+                                    ? 'bg-green-500 text-white cursor-not-allowed'
+                                    : 'bg-white text-emerald-600 hover:shadow-lg hover:scale-105'
+                                    }`}
+                            >
+                                {submitting ? (
+                                    <><FiLoader className="animate-spin" /> Processing...</>
+                                ) : paymentVerified ? (
+                                    <><FiCheckCircle /> Submitted</>
+                                ) : (
+                                    <><FiCreditCard /> Pay & Submit Application</>
+                                )}
                             </button>
                         </div>
+
+                        {submitting && (
+                            <div className="bg-blue-50 border border-blue-200 rounded-2xl p-4 text-center">
+                                <FiLoader className="animate-spin text-blue-500 mx-auto mb-2" />
+                                <p className="text-blue-800 text-sm font-medium">
+                                    Waiting for payment confirmation... Your application will be submitted automatically.
+                                </p>
+                                <p className="text-blue-600 text-xs mt-1">
+                                    Do not close this page until the process is complete.
+                                </p>
+                            </div>
+                        )}
                     </div>
                 )}
             </div>
