@@ -14,6 +14,7 @@ import Notifications from './Notifications'
 import VisaSteps from './VisaSteps'
 import VisaApplications from './VisaApplications'
 
+
 function AdminPanel() {
     const [activeTab, setActiveTab] = useState('dashboard')
     const [sidebarOpen, setSidebarOpen] = useState(true)
@@ -107,6 +108,7 @@ function AdminPanel() {
                 return <DashBoard />
         }
     }
+
 
     return (
         <div className="min-h-screen bg-gray-50 flex">

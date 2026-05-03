@@ -14,6 +14,7 @@ import AdminPanel from './pages/admin/AdminPanel'
 import AdminLogin from './pages/admin/AdminLogin'
 import MyApplications from './pages/MyApplications'
 import PaymentCallback from './pages/PaymentCallback'
+import AddUniversity from './pages/admin/AddUniversity'
 
 function App() {
   const location = useLocation()
@@ -26,6 +27,8 @@ function App() {
         <main className="main-content">
           <Routes>
             <Route path="/admin/login" element={<AdminLogin />} />
+            <Route path="/admin/universities/add" element={<AddUniversity />} />
+            <Route path="/admin/universities/:id/edit" element={<AddUniversity />} />
             <Route path="/admin/*" element={<AdminPanel />} />
           </Routes>
         </main>

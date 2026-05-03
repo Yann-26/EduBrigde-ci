@@ -330,12 +330,33 @@ export const settingsAPI = {
         }),
 };
 
+// ==================== Courses APIs ====================
+export const coursesAPI = {
+    // Get courses by program level and university
+    getAll: (params = {}) => {
+        const query = new URLSearchParams(params).toString();
+        return apiCall(`/courses?${query}`);
+    },
+
+    // Get courses linked to a specific university
+    getByUniversity: (universityId) =>
+        apiCall(`/universities/${universityId}/courses`),
+
+    // Admin: Update courses for a university
+    updateUniversityCourses: (universityId, courseIds) =>
+        apiCall(`/universities/${universityId}/courses`, {
+            method: 'PUT',
+            body: JSON.stringify({ courseIds }),
+        }),
+};
+
 export default {
     auth: authAPI,
     universities: universitiesAPI,
     applications: applicationsAPI,
     payments: paymentsAPI,
-    paystack: paystackAPI, 
+    paystack: paystackAPI,
+    courses: coursesAPI,
     dashboard: dashboardAPI,
     users: usersAPI,
     notifications: notificationsAPI,

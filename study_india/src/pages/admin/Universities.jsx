@@ -1,9 +1,9 @@
 import React, { useState, useEffect } from 'react'
+import { Link } from 'react-router-dom'
 import {
     FiPlus, FiSearch, FiEdit2, FiTrash2, FiBookOpen, FiMapPin,
     FiUsers, FiGlobe, FiLoader, FiRefreshCw
 } from 'react-icons/fi'
-import AddUniversityModal from '../../components/admin/AddUniversityModal'
 import ConfirmModal from '../../components/admin/ConfirmModal'
 
 const API_URL = import.meta.env.VITE_API_URL || '/api'
@@ -12,7 +12,6 @@ function Universities() {
     const [universities, setUniversities] = useState([])
     const [loading, setLoading] = useState(true)
     const [searchTerm, setSearchTerm] = useState('')
-    const [showAddModal, setShowAddModal] = useState(false)
     const [showDeleteModal, setShowDeleteModal] = useState(false)
     const [selectedUniversity, setSelectedUniversity] = useState(null)
     const [editingUniversity, setEditingUniversity] = useState(null)
@@ -205,12 +204,9 @@ function Universities() {
                     <h2 className="text-2xl font-bold text-gray-900">Universities</h2>
                     <p className="text-gray-600 mt-1">Manage partner universities and their programs</p>
                 </div>
-                <button
-                    onClick={() => setShowAddModal(true)}
-                    className="px-6 py-3 bg-indigo-600 text-white rounded-xl hover:bg-indigo-700 font-medium flex items-center gap-2"
-                >
+                <Link to="/admin/universities/add" className="px-6 py-3 bg-indigo-600 text-white rounded-xl hover:bg-indigo-700 font-medium flex items-center gap-2">
                     <FiPlus /> Add University
-                </button>
+                </Link>
             </div>
 
             {/* Stats */}
@@ -267,22 +263,11 @@ function Universities() {
                                     {university.logo || '🏫'}
                                 </div>
                                 <div className="flex gap-2">
-                                    <button
-                                        onClick={() => {
-                                            console.log('Editing university:', university) // Debug
-                                            setEditingUniversity(university)
-                                        }}
-                                        className="p-2 text-gray-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-lg"
-                                    >
+                                    <Link to={`/admin/universities/${university.id}/edit`} className="p-2 text-gray-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-lg">
                                         <FiEdit2 size={16} />
-                                    </button>
-                                    <button
-                                        onClick={() => {
-                                            setSelectedUniversity(university)
-                                            setShowDeleteModal(true)
-                                        }}
-                                        className="p-2 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg"
-                                    >
+                                    </Link>
+                                    <button onClick={() => { setSelectedUniversity(university); setShowDeleteModal(true) }}
+                                        className="p-2 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg">
                                         <FiTrash2 size={16} />
                                     </button>
                                 </div>
@@ -317,36 +302,6 @@ function Universities() {
                     ))
                 )}
             </div>
-
-            {/* Add University Modal */}
-            {showAddModal && (
-                <AddUniversityModal
-                    onClose={() => setShowAddModal(false)}
-                    onSave={addUniversity}
-                />
-            )}
-
-            {/* Edit University Modal */}
-            {editingUniversity && (
-                <AddUniversityModal
-                    university={editingUniversity}
-                    onClose={() => setEditingUniversity(null)}
-                    onSave={updateUniversity}
-                />
-            )}
-
-            {/* Delete Confirmation Modal */}
-            {showDeleteModal && selectedUniversity && (
-                <ConfirmModal
-                    title="Delete University"
-                    message={`Are you sure you want to delete "${selectedUniversity.name}"? This action cannot be undone.`}
-                    onConfirm={deleteUniversity}
-                    onCancel={() => {
-                        setShowDeleteModal(false)
-                        setSelectedUniversity(null)
-                    }}
-                />
-            )}
         </div>
     )
 }
