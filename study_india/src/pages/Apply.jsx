@@ -546,13 +546,7 @@ function Apply() {
                                 <select name="country" required className={inputClasses} onChange={handleChange} value={formData.country}>
                                     <option value="">Select your country</option>
                                     <option value="Ivory Coast">Ivory Coast</option>
-                                    <option value="Nigeria">Nigeria</option>
-                                    <option value="Ghana">Ghana</option>
-                                    <option value="Kenya">Kenya</option>
-                                    <option value="South Africa">South Africa</option>
-                                    <option value="Zambia">Zambia</option>
-                                    <option value="Ethiopia">Ethiopia</option>
-                                    <option value="Other">Other</option>
+
                                 </select>
                             </div>
                             <div>
