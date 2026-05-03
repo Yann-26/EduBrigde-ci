@@ -78,11 +78,6 @@ export async function sendApplicationConfirmation(email, name, applicationId, pa
                 <span class="info-label">Amount Paid:</span>
                 <span class="info-value">${amountDisplay}</span>
               </div>
-               ${paymentReference ? `
-              <div class="info-row">
-                <span class="info-label">Payment Ref:</span>
-                <span class="info-value">${paymentReference}</span>
-              </div>` : ''}
               ${paymentInfo}
             </div>
 

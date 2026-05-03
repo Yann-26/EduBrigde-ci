@@ -17,6 +17,7 @@ export async function POST(request) {
         const universityId = formData.get('university');
         const course = formData.get('course');
         const paymentRef = formData.get('payment_reference');
+        const paymentMethod = formData.get('payment_method');
 
         if (!name || !email || !phone || !country || !universityId || !course) {
             return NextResponse.json({ success: false, error: 'All fields are required' }, { status: 400 });
@@ -72,6 +73,7 @@ export async function POST(request) {
                 payment_status: paymentRef ? 'paid' : 'pending',
                 transaction_id: paymentRef || null,
                 amount: amount,
+                paymentMethod: paymentMethod || 'Paystack',
                 timeline: JSON.stringify([{
                     action: 'application_submitted',
                     description: 'Application submitted successfully',
@@ -111,8 +113,7 @@ export async function POST(request) {
 
         // Send confirmation email
         try {
-            const amountDisplay = `${currency} ${amount.toFixed(2)}`;
-            await sendApplicationConfirmation(email, name, application.application_id, amountDisplay, paymentRef);
+            await sendApplicationConfirmation(email, name, application.application_id, application.amount, paymentRef);
         } catch (emailError) {
             console.error('Failed to send email:', emailError);
         }

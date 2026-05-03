@@ -308,6 +308,7 @@ function Apply() {
             formDataToSend.append('university', universityId)
             formDataToSend.append('course', submitFormData.course)
             formDataToSend.append('payment_reference', paymentRef)
+            formDataToSend.append('payment_method', 'Paystack')
 
             // Add all documents
             Object.keys(files).forEach(docName => {
@@ -421,6 +422,7 @@ function Apply() {
             formDataToSend.append('university', formData.university)
             formDataToSend.append('course', formData.course)
             formDataToSend.append('payment_reference', paymentReference)
+            formDataToSend.append('payment_method', 'Paystack')
 
             Object.keys(files).forEach(docName => {
                 if (files[docName]) {
@@ -440,7 +442,7 @@ function Apply() {
 
             setSuccess(`Submitted! Application ID: ${result.data.applicationId}`)
             setCompletedSteps([1, 2, 3])
-            setTimeout(() => navigate('/universities'), 3000)
+            setTimeout(() => navigate('/dashboard'), 3000)
         } catch (err) {
             setError(err.message)
         } finally {

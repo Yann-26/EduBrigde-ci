@@ -303,7 +303,6 @@ function Settings() {
                                     <label className="block text-sm font-medium text-gray-700 mb-2">Currency</label>
                                     <select name="currency" value={settings.currency} onChange={handleChange}
                                         className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-indigo-500 outline-none">
-                                        <option>ZMW</option>
                                         <option>USD</option>
                                         <option>EUR</option>
                                         <option>NGN</option>
@@ -318,7 +317,7 @@ function Settings() {
                                 <div className="md:col-span-2">
                                     <label className="block text-sm font-medium text-gray-700 mb-2">WhatsApp Payment Number</label>
                                     <input type="text" name="whatsappNumber" value={settings.whatsappNumber} onChange={handleChange}
-                                        placeholder="+260 XXX XXX XXX"
+                                        placeholder="+225 XXX XXX XXX"
                                         className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-indigo-500 outline-none" />
                                 </div>
                             </div>

@@ -214,7 +214,7 @@ function Payments({ searchTerm, setSearchTerm }) {
                             className="px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-sm"
                         >
                             <option value="all">All Methods</option>
-                            <option value="WhatsApp">WhatsApp</option>
+                            <option value="Paystack">Paystack</option>
                             <option value="Mobile Money">Mobile Money</option>
                             <option value="Bank Transfer">Bank Transfer</option>
                         </select>
