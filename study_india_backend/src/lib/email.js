@@ -27,7 +27,7 @@ export async function sendEmail({ to, subject, html }) {
 }
 
 export async function sendApplicationConfirmation(email, name, applicationId, paymentAmount = null, paymentReference = null) {
-  const amountDisplay = paymentAmount ? `XOF ${paymentAmount}` : 'N/A';
+  const amountDisplay = paymentAmount || 'N/A';
   const paymentInfo = paymentReference ? `
     <div class="info-row">
       <span class="info-label">Payment Ref:</span>
@@ -78,6 +78,11 @@ export async function sendApplicationConfirmation(email, name, applicationId, pa
                 <span class="info-label">Amount Paid:</span>
                 <span class="info-value">${amountDisplay}</span>
               </div>
+               ${paymentReference ? `
+              <div class="info-row">
+                <span class="info-label">Payment Ref:</span>
+                <span class="info-value">${paymentReference}</span>
+              </div>` : ''}
               ${paymentInfo}
             </div>
 
