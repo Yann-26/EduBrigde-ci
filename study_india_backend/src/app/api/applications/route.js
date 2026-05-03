@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server';
 import { supabaseAdmin } from '@/lib/supabase';
 import { uploadMultipleFiles } from '@/lib/storage';
 import { sendApplicationConfirmation } from '@/lib/email';
-import { applicationQueries } from '@/lib/queries/applications';
+
 
 // Force dynamic - no static generation
 export const dynamic = 'force-dynamic';
@@ -36,10 +36,55 @@ export async function POST(request) {
             return NextResponse.json({ success: false, error: 'Failed to upload documents' }, { status: 500 });
         }
 
-        // Create application with real payment amount
-        const { application, currency } = await applicationQueries.create({
-            name, email, phone, country, universityId, course, paymentRef,
-        });
+        // Generate application ID
+        const { count } = await supabaseAdmin
+            .from('applications')
+            .select('*', { count: 'exact', head: true });
+        const appId = `APP${String((count || 0) + 1).padStart(6, '0')}`;
+
+        // Get payment amount
+        let amount = 0;
+        let currency = 'XOF';
+        if (paymentRef) {
+            const { data: payment } = await supabaseAdmin
+                .from('payments')
+                .select('amount, currency')
+                .eq('transaction_id', paymentRef)
+                .single();
+            if (payment) {
+                amount = parseFloat(payment.amount) || 0;
+                currency = payment.currency || 'XOF';
+            }
+        }
+
+        // Create application - DIRECT INSERT
+        const { data: application, error } = await supabaseAdmin
+            .from('applications')
+            .insert({
+                application_id: appId,
+                student_name: name,
+                student_email: email,
+                student_phone: phone,
+                student_country: country,
+                university_id: universityId,
+                course,
+                status: 'pending',
+                payment_status: paymentRef ? 'paid' : 'pending',
+                transaction_id: paymentRef || null,
+                amount: amount,
+                timeline: JSON.stringify([{
+                    action: 'application_submitted',
+                    description: 'Application submitted successfully',
+                    timestamp: new Date().toISOString(),
+                }]),
+            })
+            .select('*')
+            .single();
+
+        if (error) {
+            console.error('Database error:', error);
+            return NextResponse.json({ success: false, error: error.message }, { status: 500 });
+        }
 
         // Save documents
         const documentsToInsert = uploadedFiles.map((file, index) => ({
@@ -56,9 +101,17 @@ export async function POST(request) {
             await supabaseAdmin.from('documents').insert(documentsToInsert);
         }
 
-        // Send confirmation email with real amount
+        // Link payment to application
+        if (paymentRef) {
+            await supabaseAdmin
+                .from('payments')
+                .update({ application_id: application.id })
+                .eq('transaction_id', paymentRef);
+        }
+
+        // Send confirmation email
         try {
-            const amountDisplay = `${currency} ${parseFloat(application.amount || 0).toFixed(2)}`;
+            const amountDisplay = `${currency} ${amount.toFixed(2)}`;
             await sendApplicationConfirmation(email, name, application.application_id, amountDisplay, paymentRef);
         } catch (emailError) {
             console.error('Failed to send email:', emailError);
@@ -70,7 +123,6 @@ export async function POST(request) {
                 applicationId: application.application_id,
                 studentName: application.student_name,
                 status: application.status,
-                amount: application.amount,
             },
         }, { status: 201 });
 
