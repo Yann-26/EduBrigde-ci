@@ -11,11 +11,11 @@ export async function POST(request) {
         console.log('📥 Paystack webhook:', event);
 
         if (event === 'charge.success') {
-            const { reference, amount, metadata, customer } = body.data;
+            const { reference, amount } = body.data;
+            // reference is TXN****** from Paystack
 
-            console.log('✅ Payment successful:', reference);
+            console.log('💰 Payment completed:', reference, 'Amount:', amount / 100);
 
-            // Update payment in database
             const { error } = await supabaseAdmin
                 .from('payments')
                 .update({
@@ -25,17 +25,9 @@ export async function POST(request) {
                 .eq('transaction_id', reference);
 
             if (error) {
-                console.error('Payment update error:', error);
+                console.error('❌ Update error:', error.message);
             } else {
-                console.log('Payment marked as completed:', reference);
-            }
-
-            // Update application payment status
-            if (metadata?.application_id) {
-                await supabaseAdmin
-                    .from('applications')
-                    .update({ payment_status: 'paid' })
-                    .eq('id', metadata.application_id);
+                console.log('✅ Payment updated:', reference);
             }
         }
 
