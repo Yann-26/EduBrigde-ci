@@ -187,40 +187,75 @@ function Apply() {
                 return
             }
 
-            // Initialize payment on your backend
+            // SAVE form data to localStorage before opening payment
+            localStorage.setItem('apply_form_data', JSON.stringify(formData))
+            localStorage.setItem('apply_university_id', universityId)
+
+            // Also save file names (can't save File objects)
+            const fileNames = {}
+            Object.keys(files).forEach(key => {
+                if (files[key]) fileNames[key] = files[key].name
+            })
+            localStorage.setItem('apply_file_names', JSON.stringify(fileNames))
+
+            // Initialize payment
             const response = await fetch(`${API_URL}/payments/paystack/initialize`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
                     Authorization: `Bearer ${token}`,
                 },
-                body: JSON.stringify({ email, amount: 1, applicationId: null }),
+                body: JSON.stringify({
+                    email,
+                    amount: 1,
+                    callback_url: `${window.location.origin}/payment/callback`
+                }),
             })
 
             const result = await response.json()
 
-            if (result.success && result.data && result.data.access_code) {
-                // Use Paystack's popup instead of redirecting
-                const handler = window.PaystackPop.setup({
-                    key: import.meta.env.VITE_PAYSTACK_PUBLIC_KEY, // Ensure you have this in your .env
-                    email: email,
-                    access_code: result.data.access_code,
-                    onClose: () => {
-                        alert('Payment window closed. Please complete payment to submit your application.');
-                    },
-                    callback: (response) => {
-                        // This runs immediately when payment is successful inside the popup
-                        verifyPayment(response.reference);
-                    }
-                });
+            if (result.success && result.data) {
+                // OPEN IN NEW TAB
+                const paymentWindow = window.open(result.data.authorization_url, '_blank')
 
-                handler.openIframe();
+                if (!paymentWindow) {
+                    alert('Please allow popups for this site to complete payment.')
+                }
+
+                // Poll for payment completion from localStorage
+                const checkPaymentInterval = setInterval(() => {
+                    const verifiedRef = localStorage.getItem('payment_verified_ref')
+                    const verifiedStatus = localStorage.getItem('payment_verified_status')
+
+                    if (verifiedStatus === 'true' && verifiedRef) {
+                        clearInterval(checkPaymentInterval)
+                        setPaymentReference(verifiedRef)
+                        setPaymentVerified(true)
+
+                        // Restore form data
+                        const savedData = localStorage.getItem('apply_form_data')
+                        if (savedData) {
+                            try {
+                                const parsed = JSON.parse(savedData)
+                                setFormData(prev => ({ ...prev, ...parsed }))
+                            } catch (e) { }
+                        }
+
+                        // Clean up
+                        localStorage.removeItem('payment_verified_ref')
+                        localStorage.removeItem('payment_verified_status')
+                    }
+                }, 2000)
+
+                // Stop checking after 5 minutes
+                setTimeout(() => clearInterval(checkPaymentInterval), 300000)
+
             } else {
                 alert(result.error || 'Payment initialization failed')
             }
         } catch (err) {
             console.error('Payment error:', err)
-            setError('Failed to initialize payment')
+            alert('Failed to initialize payment')
         } finally {
             setPaystackLoading(false)
         }

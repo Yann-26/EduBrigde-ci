@@ -1,12 +1,10 @@
 import React, { useEffect, useState } from 'react'
-import { useNavigate, useSearchParams } from 'react-router-dom'
 import { FiLoader, FiCheckCircle, FiXCircle } from 'react-icons/fi'
 
 const API_URL = import.meta.env.VITE_API_URL || '/api'
 
 function PaymentCallback() {
-    const [searchParams] = useSearchParams()
-    const navigate = useNavigate()
+    const [searchParams] = new URLSearchParams(window.location.search)
     const [status, setStatus] = useState('verifying')
     const [message, setMessage] = useState('Verifying your payment...')
 
@@ -34,17 +32,17 @@ function PaymentCallback() {
 
             if (result.success && result.data?.status === 'success') {
                 setStatus('success')
-                setMessage('Payment confirmed! Redirecting to your application...')
+                setMessage('Payment confirmed! You can close this tab now.')
 
-                // Store payment reference in localStorage
-                localStorage.setItem('payment_reference', reference)
-                localStorage.setItem('payment_verified', 'true')
+                // SAVE to localStorage so the apply page can pick it up
+                localStorage.setItem('payment_verified_ref', reference)
+                localStorage.setItem('payment_verified_status', 'true')
                 localStorage.setItem('payment_amount', result.data.amount / 100)
 
-                // Go back to the previous page after 2 seconds
+                // Auto-close after 3 seconds
                 setTimeout(() => {
-                    navigate(-1) // Go back to apply page
-                }, 2000)
+                    window.close()
+                }, 3000)
             } else {
                 setStatus('error')
                 setMessage(result.data?.gateway_response || 'Payment verification failed')
@@ -69,6 +67,7 @@ function PaymentCallback() {
                     <>
                         <FiCheckCircle className="text-4xl text-green-500 mx-auto mb-4" />
                         <h2 className="text-xl font-bold text-green-700 mb-2">Payment Successful!</h2>
+                        <p className="text-sm text-gray-500 mt-2">This tab will close automatically...</p>
                     </>
                 )}
 
@@ -79,16 +78,7 @@ function PaymentCallback() {
                     </>
                 )}
 
-                <p className="text-gray-600">{message}</p>
-
-                {status === 'error' && (
-                    <button
-                        onClick={() => navigate(-1)}
-                        className="mt-6 px-6 py-3 bg-indigo-600 text-white rounded-xl hover:bg-indigo-700"
-                    >
-                        Go Back & Try Again
-                    </button>
-                )}
+                <p className="text-gray-600 mt-2">{message}</p>
             </div>
         </div>
     )
