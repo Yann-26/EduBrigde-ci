@@ -7,34 +7,42 @@ export const dynamic = 'force-dynamic';
 
 export async function PUT(request, { params }) {
     try {
-        await requireAdmin();
-
-        const { id } = params;
+        const { id } = await params;
         const body = await request.json();
 
-        // Don't allow password update through this route
-        delete body.password_hash;
+        // Only allow updating these fields
+        const allowedFields = ['name', 'phone', 'country', 'status', 'role'];
+        const updateData = {};
+
+        allowedFields.forEach(field => {
+            if (body[field] !== undefined) {
+                updateData[field] = body[field];
+            }
+        });
+
+        updateData.updated_at = new Date().toISOString();
 
         const { data: user, error } = await supabaseAdmin
             .from('users')
-            .update(body)
+            .update(updateData)
             .eq('id', id)
-            .select('id, name, email, role, status, created_at')
+            .select('id, name, email, phone, role, status, created_at')
             .single();
 
         if (error) {
-            throw error;
+            console.error('Update user error:', error);
+            return NextResponse.json(
+                { success: false, error: error.message },
+                { status: 500 }
+            );
         }
 
-        return NextResponse.json({
-            success: true,
-            data: user,
-        });
+        return NextResponse.json({ success: true, data: user });
 
     } catch (error) {
         console.error('Update user error:', error);
         return NextResponse.json(
-            { error: 'Failed to update user' },
+            { success: false, error: error.message },
             { status: 500 }
         );
     }

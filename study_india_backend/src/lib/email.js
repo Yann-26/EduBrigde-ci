@@ -26,7 +26,15 @@ export async function sendEmail({ to, subject, html }) {
   }
 }
 
-export async function sendApplicationConfirmation(email, name, applicationId) {
+export async function sendApplicationConfirmation(email, name, applicationId, paymentAmount = null, paymentReference = null) {
+  const amountDisplay = paymentAmount ? `XOF ${paymentAmount}` : 'N/A';
+  const paymentInfo = paymentReference ? `
+    <div class="info-row">
+      <span class="info-label">Payment Ref:</span>
+      <span class="info-value">${paymentReference}</span>
+    </div>
+  ` : '';
+
   const html = `
     <!DOCTYPE html>
     <html>
@@ -67,16 +75,17 @@ export async function sendApplicationConfirmation(email, name, applicationId) {
                 <span class="info-value">${applicationId}</span>
               </div>
               <div class="info-row">
-                <span class="info-label">Application Fee:</span>
-                <span class="info-value">ZMW 75</span>
+                <span class="info-label">Amount Paid:</span>
+                <span class="info-value">${amountDisplay}</span>
               </div>
+              ${paymentInfo}
             </div>
 
             <p class="message">You will receive updates regarding your application status directly at this email address.</p>
             
             <div class="signature">
               <p style="margin: 0;">Best regards,</p>
-              <p style="margin: 4px 0 0 0; font-weight: 600; color: #111827;">Study India Team</p>
+              <p style="margin: 4px 0 0 0; font-weight: 600; color: #111827;">EduBridge Team</p>
             </div>
           </div>
         </div>
@@ -90,7 +99,7 @@ export async function sendApplicationConfirmation(email, name, applicationId) {
 
   return sendEmail({
     to: email,
-    subject: 'Application Confirmation - Study India',
+    subject: 'Application Confirmation - EduBridge',
     html,
   });
 }
@@ -146,7 +155,7 @@ export async function sendStatusUpdateEmail(email, name, status, applicationId) 
           <div class="content">
             <h1 class="header-title">Application Status Update</h1>
             <p class="greeting">Dear ${name},</p>
-            <p style="color: #475569;">There has been an update to your Study India application.</p>
+            <p style="color: #475569;">There has been an update to your EduBrigde application.</p>
             
             <div class="status-container">
               <div class="app-id-text">Application ID: <strong>${applicationId}</strong></div>
@@ -156,7 +165,7 @@ export async function sendStatusUpdateEmail(email, name, status, applicationId) 
             
             <div class="signature">
               <p style="margin: 0;">Best regards,</p>
-              <p style="margin: 4px 0 0 0; font-weight: 600; color: #111827;">Study India Team</p>
+              <p style="margin: 4px 0 0 0; font-weight: 600; color: #111827;">EduBrigde Team</p>
             </div>
           </div>
         </div>

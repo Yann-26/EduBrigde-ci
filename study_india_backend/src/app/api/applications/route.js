@@ -104,11 +104,33 @@ export async function POST(request) {
             }
         }
 
-        // Send confirmation email (non-blocking)
+        // Send confirmation email with real payment amount
         try {
-            await sendApplicationConfirmation(email, name, application.application_id);
+            const paymentRef = formData.get('payment_reference')
+            let paymentAmount = null
+
+            // Get actual payment amount from database
+            if (paymentRef) {
+                const { data: payment } = await supabaseAdmin
+                    .from('payments')
+                    .select('amount')
+                    .eq('transaction_id', paymentRef)
+                    .single()
+
+                if (payment) {
+                    paymentAmount = payment.amount
+                }
+            }
+
+            await sendApplicationConfirmation(
+                email,
+                name,
+                application.application_id,
+                paymentAmount,
+                paymentRef
+            )
         } catch (emailError) {
-            console.error('Failed to send confirmation email:', emailError);
+            console.error('Failed to send email:', emailError)
         }
 
         return NextResponse.json({

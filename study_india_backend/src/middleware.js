@@ -28,6 +28,7 @@ export async function middleware(request) {
 
     // For auth/me and applications - always pass through, route handles auth
     if (pathname.startsWith('/api/auth/me') ||
+        pathname.startsWith('/api/auth/change-password') ||
         pathname.startsWith('/api/applications') ||
         pathname.startsWith('/api/payments') ||
         pathname.startsWith('/api/users') ||

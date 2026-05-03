@@ -8,13 +8,19 @@ export async function GET(request) {
     try {
         const { searchParams } = new URL(request.url);
         const page = parseInt(searchParams.get('page')) || 1;
-        const limit = parseInt(searchParams.get('limit')) || 10;
+        const limit = parseInt(searchParams.get('limit')) || 100;
         const status = searchParams.get('status');
         const search = searchParams.get('search');
 
+        console.log('Fetching payments...');
+
         let query = supabaseAdmin
             .from('payments')
-            .select('*, application:applications(application_id, student_name, course)', { count: 'exact' });
+            .select(`
+                *,
+                application:applications(application_id, student_name, course)
+            `, { count: 'exact' })
+            .order('created_at', { ascending: false });
 
         if (status && status !== 'all') {
             query = query.eq('status', status);
@@ -24,29 +30,34 @@ export async function GET(request) {
             query = query.or(`student_name.ilike.%${search}%,transaction_id.ilike.%${search}%`);
         }
 
-        const { data: payments, error, count } = await query
-            .order('created_at', { ascending: false })
+        const { data, error, count } = await query
             .range((page - 1) * limit, page * limit - 1);
 
         if (error) {
-            throw error;
+            console.error('Payments query error:', error);
+            return NextResponse.json(
+                { success: false, error: error.message },
+                { status: 500 }
+            );
         }
+
+        console.log(`Found ${data?.length || 0} payments`);
 
         return NextResponse.json({
             success: true,
-            data: payments,
+            data: data || [],
             pagination: {
                 page,
                 limit,
-                total: count,
-                pages: Math.ceil(count / limit),
+                total: count || 0,
+                pages: Math.ceil((count || 0) / limit),
             },
         });
 
     } catch (error) {
         console.error('Get payments error:', error);
         return NextResponse.json(
-            { error: 'Failed to fetch payments' },
+            { success: false, error: error.message },
             { status: 500 }
         );
     }

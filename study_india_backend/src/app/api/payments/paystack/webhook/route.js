@@ -6,8 +6,6 @@ export const dynamic = 'force-dynamic';
 export async function POST(request) {
     try {
         const body = await request.json();
-
-        // Paystack sends webhook events
         const event = body.event;
 
         console.log('📥 Paystack webhook:', event);
@@ -15,10 +13,10 @@ export async function POST(request) {
         if (event === 'charge.success') {
             const { reference, amount, metadata, customer } = body.data;
 
-            console.log('✅ Payment successful:', reference, 'Amount:', amount / 100);
+            console.log('✅ Payment successful:', reference);
 
-            // Update payment status in database
-            const { error: payError } = await supabaseAdmin
+            // Update payment in database
+            const { error } = await supabaseAdmin
                 .from('payments')
                 .update({
                     status: 'completed',
@@ -26,8 +24,10 @@ export async function POST(request) {
                 })
                 .eq('transaction_id', reference);
 
-            if (payError) {
-                console.error('Payment update error:', payError);
+            if (error) {
+                console.error('Payment update error:', error);
+            } else {
+                console.log('Payment marked as completed:', reference);
             }
 
             // Update application payment status
@@ -37,15 +37,12 @@ export async function POST(request) {
                     .update({ payment_status: 'paid' })
                     .eq('id', metadata.application_id);
             }
-
-            console.log('✅ Payment confirmed for:', reference);
         }
 
-        // Always return 200 to Paystack
         return NextResponse.json({ status: 'ok' });
 
     } catch (error) {
         console.error('Webhook error:', error);
-        return NextResponse.json({ status: 'error', message: error.message }, { status: 500 });
+        return NextResponse.json({ status: 'error' }, { status: 500 });
     }
 }

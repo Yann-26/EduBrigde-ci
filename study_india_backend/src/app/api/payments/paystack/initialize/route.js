@@ -9,18 +9,10 @@ export async function POST(request) {
         const body = await request.json();
         const { email, amount, applicationId } = body;
 
-        console.log('Payment init request:', { email, amount, applicationId });
+        console.log('Payment init:', { email, amount, applicationId });
 
-        const errors = [];
-        if (!email) errors.push('Email is required');
-        if (!amount) errors.push('Amount is required');
-        if (amount <= 0) errors.push('Amount must be greater than 0');
-
-        if (errors.length > 0) {
-            return NextResponse.json(
-                { success: false, error: errors.join(', ') },
-                { status: 400 }
-            );
+        if (!email || !amount) {
+            return NextResponse.json({ success: false, error: 'Email and amount are required' }, { status: 400 });
         }
 
         const reference = `EDU-${uuidv4().substring(0, 8).toUpperCase()}`;
@@ -54,16 +46,23 @@ export async function POST(request) {
             );
         }
 
-        // Save pending payment
-        if (applicationId) {
-            await supabaseAdmin.from('payments').insert({
-                application_id: applicationId,
-                transaction_id: reference,
-                amount: amount,
-                currency: 'XOF',
-                method: 'Paystack',
-                status: 'pending',
-            });
+        // SAVE PAYMENT TO DATABASE
+        const { error: dbError } = await supabaseAdmin.from('payments').insert({
+            transaction_id: reference,
+            amount: amount,
+            currency: 'XOF',
+            method: 'Paystack',
+            status: 'pending',
+            student_name: body.studentName || email.split('@')[0],
+            student_email: email,
+            application_id: applicationId || null,
+        });
+
+        if (dbError) {
+            console.error('Failed to save payment:', dbError);
+            // Continue anyway - payment is initialized
+        } else {
+            console.log('Payment saved to database:', reference);
         }
 
         return NextResponse.json({

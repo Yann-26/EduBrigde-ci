@@ -12,7 +12,7 @@ import Login from './pages/Login'
 import Register from './pages/Register'
 import AdminPanel from './pages/admin/AdminPanel'
 import AdminLogin from './pages/admin/AdminLogin'
-import MyApplications from './pages/MyApplications'
+import Dashboard from './pages/Dashboard'
 import PaymentCallback from './pages/PaymentCallback'
 import AddUniversity from './pages/admin/AddUniversity'
 
@@ -51,7 +51,7 @@ function App() {
           <Route path="/visa-tracker" element={<VisaTracker />} />
           <Route path="/apply/:universityId" element={<Apply />} />
           <Route path="/payment/callback" element={<PaymentCallback />} />
-          <Route path="/applications" element={<MyApplications />} />
+          <Route path="/dashboard" element={<Dashboard />} />
         </Routes>
       </main>
       <Footer />
