@@ -368,28 +368,6 @@ function Apply() {
         }
     }
 
-    const verifyPayment = async (reference) => {
-        try {
-            setCheckingPayment(true)
-            const token = getToken()
-            const response = await fetch(`${API_URL}/payments/paystack/verify/${reference}`, {
-                headers: { Authorization: `Bearer ${token}` },
-            })
-            const result = await response.json()
-            if (result.success && result.data?.status === 'success') {
-                setPaymentReference(reference)
-                setPaymentVerified(true)
-                setError('')
-            } else {
-                setError('Payment verification failed. Please try again.')
-            }
-        } catch (err) {
-            console.error('Verification error:', err)
-            setError('Failed to verify payment')
-        } finally {
-            setCheckingPayment(false)
-        }
-    }
 
     // Restore form data after payment
     useEffect(() => {
