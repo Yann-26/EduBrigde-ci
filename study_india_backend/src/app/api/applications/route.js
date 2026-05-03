@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { supabaseAdmin } from '@/lib/supabase';
 import { uploadMultipleFiles } from '@/lib/storage';
 import { sendApplicationConfirmation } from '@/lib/email';
+import { applicationQueries } from '@/lib/queries/applications';
 
 // Force dynamic - no static generation
 export const dynamic = 'force-dynamic';
