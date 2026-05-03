@@ -20,6 +20,21 @@ function App() {
   const location = useLocation()
   const isAdminRoute = location.pathname.startsWith('/admin')
 
+  const isReceipt = location.pathname.startsWith('/receipt')  
+
+  // Receipt page - standalone
+  if (isReceipt) {
+    return (
+      <div className="app">
+        <main className="main-content">
+          <Routes>
+            <Route path="/receipt/:reference" element={<Receipt />} />
+          </Routes>
+        </main>
+      </div>
+    )
+  }
+
   // Admin routes - no Navbar, no Footer
   if (isAdminRoute) {
     return (

@@ -53,11 +53,11 @@ export async function POST(request) {
             status: 'pending',
             student_name: body.studentName || email?.split('@')[0] || 'Student',
             student_email: email,
-            application_id: applicationId || null,
+            application_id: null,
         });
 
         if (dbError) {
-            console.error('❌ Failed to save payment:', dbError.message, dbError.details);
+            console.error('❌ Failed to save payment:', dbError.message);
         } else {
             console.log('✅ Payment saved:', reference);
         }
