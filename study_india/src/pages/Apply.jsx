@@ -239,23 +239,29 @@ function Apply() {
                 const checkPayment = setInterval(async () => {
                     attempts++
 
-                    // Check if payment was verified by the callback page
+                    // CHECK THE CORRECT KEYS set by PaymentCallback
                     const verifiedRef = localStorage.getItem('payment_verified_ref')
+                    const verifiedStatus = localStorage.getItem('payment_verified_status')
 
-                    if (verifiedRef) {
+                    console.log('Polling payment...', { verifiedRef, verifiedStatus, attempts })
+
+                    if (verifiedStatus === 'true' && verifiedRef) {
                         clearInterval(checkPayment)
+
+                        // Clean up localStorage
                         localStorage.removeItem('payment_verified_ref')
                         localStorage.removeItem('payment_verified_status')
                         localStorage.removeItem('pending_payment_ref')
+                        localStorage.removeItem('pending_payment_uni')
 
                         // NOW SUBMIT THE APPLICATION
                         await submitApplication(token, verifiedRef)
 
-                    } else if (attempts > 60) {
-                        // Timeout after 2 minutes
+                    } else if (attempts > 90) {
+                        // Timeout after 3 minutes (90 x 2 seconds)
                         clearInterval(checkPayment)
                         setSubmitting(false)
-                        setError('Payment timeout. Please try again or contact support.')
+                        setError('Payment timeout. If payment was successful, please refresh the page or contact support.')
                     }
                 }, 2000)
 
