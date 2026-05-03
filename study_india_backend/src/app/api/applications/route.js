@@ -20,42 +20,40 @@ export async function POST(request) {
         console.log('Received application:', { name, email, phone, country, universityId, course });
 
         if (!name || !email || !phone || !country || !universityId || !course) {
-            return NextResponse.json(
-                { success: false, error: 'All fields are required' },
-                { status: 400 }
-            );
+            return NextResponse.json({ success: false, error: 'All fields are required' }, { status: 400 });
         }
 
         // Handle file uploads
         const documentFiles = formData.getAll('documents');
         const documentNames = formData.getAll('documentNames');
 
-        console.log(`Received ${documentFiles.length} documents`);
-
         if (!documentFiles.length) {
-            return NextResponse.json(
-                { success: false, error: 'At least one document is required' },
-                { status: 400 }
-            );
+            return NextResponse.json({ success: false, error: 'At least one document is required' }, { status: 400 });
         }
 
-        // Upload documents to Supabase Storage
+        // Upload documents
         let uploadedFiles = [];
         try {
             uploadedFiles = await uploadMultipleFiles(documentFiles, 'documents');
-            console.log('Uploaded files:', uploadedFiles.length);
         } catch (uploadError) {
             console.error('File upload error:', uploadError);
-            return NextResponse.json(
-                { success: false, error: 'Failed to upload documents' },
-                { status: 500 }
-            );
+            return NextResponse.json({ success: false, error: 'Failed to upload documents' }, { status: 500 });
         }
 
-        // Create application in database
+        // Generate application ID
+        const { count } = await supabaseAdmin
+            .from('applications')
+            .select('*', { count: 'exact', head: true });
+        const appId = `APP${String((count || 0) + 1).padStart(6, '0')}`;
+
+        // Get payment reference
+        const paymentRef = formData.get('payment_reference');
+
+        // CREATE APPLICATION - ONLY ONCE
         const { data: application, error } = await supabaseAdmin
             .from('applications')
             .insert({
+                application_id: appId,
                 student_name: name,
                 student_email: email,
                 student_phone: phone,
@@ -63,8 +61,9 @@ export async function POST(request) {
                 university_id: universityId,
                 course,
                 status: 'pending',
-                payment_status: 'pending',
-                amount: 'XOF 0',
+                payment_status: paymentRef ? 'paid' : 'pending',
+                transaction_id: paymentRef || null,
+                amount: 'XOF 500',
                 timeline: JSON.stringify([{
                     action: 'application_submitted',
                     description: 'Application submitted successfully',
@@ -76,13 +75,10 @@ export async function POST(request) {
 
         if (error) {
             console.error('Database error:', error);
-            return NextResponse.json(
-                { success: false, error: 'Failed to create application: ' + error.message },
-                { status: 500 }
-            );
+            return NextResponse.json({ success: false, error: error.message }, { status: 500 });
         }
 
-        // Save documents to database
+        // Save documents
         const documentsToInsert = uploadedFiles.map((file, index) => ({
             application_id: application.id,
             name: documentNames[index] || `Document ${index + 1}`,
@@ -95,42 +91,33 @@ export async function POST(request) {
         }));
 
         if (documentsToInsert.length > 0) {
-            const { error: docError } = await supabaseAdmin
-                .from('documents')
-                .insert(documentsToInsert);
-
-            if (docError) {
-                console.error('Document save error:', docError);
-            }
+            await supabaseAdmin.from('documents').insert(documentsToInsert);
         }
 
-        // Send confirmation email with real payment amount
-        try {
-            const paymentRef = formData.get('payment_reference')
-            let paymentAmount = null
+        // Link payment to application
+        if (paymentRef) {
+            await supabaseAdmin
+                .from('payments')
+                .update({ application_id: application.id })
+                .eq('transaction_id', paymentRef);
+        }
 
-            // Get actual payment amount from database
+        // Send confirmation email
+        try {
+            let paymentAmount = null;
             if (paymentRef) {
                 const { data: payment } = await supabaseAdmin
                     .from('payments')
                     .select('amount, currency')
                     .eq('transaction_id', paymentRef)
-                    .single()
-
+                    .single();
                 if (payment) {
-                    paymentAmount = `${payment.currency || 'XOF'} ${parseFloat(payment.amount || 0).toFixed(2)}`
+                    paymentAmount = `${payment.currency || 'XOF'} ${parseFloat(payment.amount || 0).toFixed(2)}`;
                 }
             }
-
-            await sendApplicationConfirmation(
-                email,
-                name,
-                application.application_id,
-                paymentAmount,
-                paymentRef
-            )
+            await sendApplicationConfirmation(email, name, application.application_id, paymentAmount, paymentRef);
         } catch (emailError) {
-            console.error('Failed to send email:', emailError)
+            console.error('Failed to send email:', emailError);
         }
 
         return NextResponse.json({
@@ -145,12 +132,10 @@ export async function POST(request) {
 
     } catch (error) {
         console.error('❌ Application submission error:', error);
-        return NextResponse.json(
-            { success: false, error: 'Internal server error: ' + error.message },
-            { status: 500 }
-        );
+        return NextResponse.json({ success: false, error: error.message }, { status: 500 });
     }
 }
+
 
 export async function GET(request) {
     try {
