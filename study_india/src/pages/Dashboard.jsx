@@ -29,7 +29,7 @@ function Dashboard() {
     const [notifications, setNotifications] = useState([])
 
     // Profile
-    const [profile, setProfile] = useState({ name: '', email: '', phone: '', country: '' })
+    const [profile, setProfile] = useState({ name: '', email: '', phone: '' })
     const [profileMessage, setProfileMessage] = useState('')
 
     // Password
@@ -48,7 +48,6 @@ function Dashboard() {
                 name: user.name || '',
                 email: user.email || '',
                 phone: user.phone || '',
-                country: user.country || '',
             })
         }
     }, [user])
@@ -402,19 +401,6 @@ function Dashboard() {
                                 <label className="block text-sm font-medium text-gray-700 mb-1">Phone</label>
                                 <input type="tel" value={profile.phone} onChange={e => setProfile({ ...profile, phone: e.target.value })}
                                     className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-indigo-500 outline-none" />
-                            </div>
-                            <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-1">Country</label>
-                                <select value={profile.country} onChange={e => setProfile({ ...profile, country: e.target.value })}
-                                    className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-indigo-500 outline-none">
-                                    <option value="">Select country</option>
-                                    <option value="Ivory Coast">Ivory Coast</option>
-                                    <option value="Nigeria">Nigeria</option>
-                                    <option value="Ghana">Ghana</option>
-                                    <option value="Kenya">Kenya</option>
-                                    <option value="South Africa">South Africa</option>
-                                    <option value="Other">Other</option>
-                                </select>
                             </div>
                             <button onClick={handleProfileUpdate} disabled={saving}
                                 className="px-6 py-3 bg-indigo-600 text-white rounded-xl hover:bg-indigo-700 font-medium flex items-center gap-2 disabled:opacity-50">

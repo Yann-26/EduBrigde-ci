@@ -11,7 +11,7 @@ export async function PUT(request, { params }) {
         const body = await request.json();
 
         // Only allow updating these fields
-        const allowedFields = ['name', 'phone', 'country', 'status', 'role'];
+        const allowedFields = ['name', 'phone', 'status', 'role'];
         const updateData = {};
 
         allowedFields.forEach(field => {
