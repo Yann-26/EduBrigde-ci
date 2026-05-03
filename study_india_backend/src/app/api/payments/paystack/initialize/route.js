@@ -9,7 +9,7 @@ export async function POST(request) {
         const body = await request.json();
         const { email, amount, applicationId } = body;
 
-        console.log('Payment init:', { email, amount, applicationId });
+        console.log('💳 Payment init:', { email, amount });
 
         if (!email || !amount) {
             return NextResponse.json({ success: false, error: 'Email and amount are required' }, { status: 400 });
@@ -26,18 +26,16 @@ export async function POST(request) {
             },
             body: JSON.stringify({
                 email,
-                amount: Math.round(amount * 100), // Convert to kobo/cents
+                amount: Math.round(amount * 100),
                 reference,
                 currency: 'XOF',
                 callback_url: `${process.env.NEXT_PUBLIC_FRONTEND_URL || 'http://localhost:5173'}/payment/callback`,
-                metadata: {
-                    application_id: applicationId || null,
-                },
+                metadata: { application_id: applicationId || null },
             }),
         });
 
         const paystackData = await paystackResponse.json();
-        console.log('Paystack response:', paystackData);
+        console.log('📡 Paystack:', paystackData.status ? 'OK' : 'FAILED', paystackData.message);
 
         if (!paystackData.status) {
             return NextResponse.json(
@@ -46,23 +44,22 @@ export async function POST(request) {
             );
         }
 
-        // SAVE PAYMENT TO DATABASE
+        // ✅ SAVE PAYMENT TO DATABASE IMMEDIATELY
         const { error: dbError } = await supabaseAdmin.from('payments').insert({
             transaction_id: reference,
             amount: amount,
             currency: 'XOF',
             method: 'Paystack',
             status: 'pending',
-            student_name: body.studentName || email.split('@')[0],
+            student_name: body.studentName || email?.split('@')[0] || 'Student',
             student_email: email,
             application_id: applicationId || null,
         });
 
         if (dbError) {
-            console.error('Failed to save payment:', dbError);
-            // Continue anyway - payment is initialized
+            console.error('❌ Failed to save payment to DB:', dbError.message);
         } else {
-            console.log('Payment saved to database:', reference);
+            console.log('✅ Payment saved to database:', reference);
         }
 
         return NextResponse.json({
@@ -74,7 +71,7 @@ export async function POST(request) {
         });
 
     } catch (error) {
-        console.error('Payment init error:', error);
+        console.error('❌ Payment init error:', error);
         return NextResponse.json(
             { success: false, error: error.message || 'Internal server error' },
             { status: 500 }

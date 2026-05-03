@@ -36,6 +36,17 @@ function Apply() {
     const [formData, setFormData] = useState({
         name: '', country: '', phone: '', email: '', course: '', university: universityId || '', educationLevel: ''
     })
+    // Fill form with user data when user loads
+    useEffect(() => {
+        if (user) {
+            setFormData(prev => ({
+                ...prev,
+                name: user.name || '',
+                email: user.email || '',
+                phone: user.phone || '',
+            }))
+        }
+    }, [user])
 
     const [files, setFiles] = useState({
         passport: null, bepc: null, bac: null, birthCertificate: null, healthCertificate: null,
@@ -320,6 +331,10 @@ function Apply() {
                 setPaymentVerified(true)
                 setCompletedSteps([1, 2, 3])
 
+                // Store receipt info for later access
+                localStorage.setItem('last_payment_ref', paymentRef)
+                localStorage.setItem('last_application_id', result.data.applicationId)
+
                 // Clean up
                 localStorage.removeItem('apply_form_data')
                 localStorage.removeItem('apply_university_id')
@@ -327,7 +342,7 @@ function Apply() {
                 localStorage.removeItem('pending_payment_ref')
                 localStorage.removeItem('pending_payment_uni')
 
-                setTimeout(() => navigate('/universities'), 3000)
+                setTimeout(() => navigate('/dashboard'), 3000)
             } else {
                 throw new Error(result.error || 'Submission failed')
             }
@@ -492,9 +507,14 @@ function Apply() {
                 <Stepper currentStep={currentStep} completedSteps={completedSteps} />
 
                 {success && (
-                    <div className="mb-6 bg-green-50 border border-green-200 rounded-2xl p-6 flex items-center gap-4">
-                        <FiCheck className="text-green-500 text-2xl" />
+                    <div className="mb-6 bg-green-50 border border-green-200 rounded-2xl p-6">
+                        <FiCheck className="text-green-500 text-2xl mb-2" />
                         <p className="text-green-800 font-medium">{success}</p>
+                        {paymentReference && (
+                            <Link to={`/receipt/${paymentReference}`} className="mt-2 inline-flex items-center gap-1 text-indigo-600 text-sm font-medium hover:underline">
+                                <FiFileText size={14} /> View Payment Receipt
+                            </Link>
+                        )}
                     </div>
                 )}
 
@@ -511,15 +531,15 @@ function Apply() {
                         <div className="grid md:grid-cols-2 gap-6">
                             <div>
                                 <label className="block text-sm font-bold text-gray-700 mb-2">Full Name *</label>
-                                <input type="text" name="name" required placeholder="John Doe" className={inputClasses} onChange={handleChange} value={formData.name} />
+                                <input type="text" name="name" required placeholder="John Doe" className={inputClasses} onChange={handleChange} value={formData.name} disabled />
                             </div>
                             <div>
                                 <label className="block text-sm font-bold text-gray-700 mb-2">Email Address *</label>
-                                <input type="email" name="email" required placeholder="john@example.com" className={inputClasses} onChange={handleChange} value={formData.email} />
+                                <input type="email" name="email" required placeholder="john@example.com" className={inputClasses} onChange={handleChange} value={formData.email} disabled />
                             </div>
                             <div>
                                 <label className="block text-sm font-bold text-gray-700 mb-2">Phone / WhatsApp *</label>
-                                <input type="tel" name="phone" required placeholder="+XXX XXX XXX XXX" className={inputClasses} onChange={handleChange} value={formData.phone} />
+                                <input type="tel" name="phone" required placeholder="+XXX XXX XXX XXX" className={inputClasses} onChange={handleChange} value={formData.phone} disabled />
                             </div>
                             <div>
                                 <label className="block text-sm font-bold text-gray-700 mb-2">Country *</label>

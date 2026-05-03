@@ -113,12 +113,12 @@ export async function POST(request) {
             if (paymentRef) {
                 const { data: payment } = await supabaseAdmin
                     .from('payments')
-                    .select('amount')
+                    .select('amount, currency')
                     .eq('transaction_id', paymentRef)
                     .single()
 
                 if (payment) {
-                    paymentAmount = payment.amount
+                    paymentAmount = `${payment.currency || 'XOF'} ${parseFloat(payment.amount || 0).toFixed(2)}`
                 }
             }
 
