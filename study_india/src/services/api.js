@@ -350,12 +350,20 @@ export const coursesAPI = {
         }),
 };
 
+// ==================== Receipt APIs ====================
+export const receiptAPI = {
+    // Get payment receipt by transaction reference
+    getByReference: (reference) =>
+        apiCall(`/payments/reference/${reference}`),
+};
+
 export default {
     auth: authAPI,
     universities: universitiesAPI,
     applications: applicationsAPI,
     payments: paymentsAPI,
     paystack: paystackAPI,
+    receipt: receiptAPI,  
     courses: coursesAPI,
     dashboard: dashboardAPI,
     users: usersAPI,

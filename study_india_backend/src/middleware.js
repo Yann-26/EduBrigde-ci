@@ -16,6 +16,7 @@ const PUBLIC_POST_PATHS = [
     '/api/applications',
     '/api/documents/upload',
     '/api/payments',
+    '/api/payments/paystack/webhook',
 ];
 
 export async function middleware(request) {
@@ -33,7 +34,8 @@ export async function middleware(request) {
         pathname.startsWith('/api/payments') ||
         pathname.startsWith('/api/users') ||
         pathname.startsWith('/api/notifications') ||
-        pathname.startsWith('/api/documents')||
+        pathname.startsWith('/api/documents') ||
+        pathname.startsWith('/api/courses') ||  
         pathname.startsWith('/api/visa')
     ) {
 
@@ -52,6 +54,11 @@ export async function middleware(request) {
                 // Token invalid, pass through anyway
             }
         }
+        return NextResponse.next();
+    }
+
+    // Paystack webhook - always allow
+    if (pathname === '/api/payments/paystack/webhook') {
         return NextResponse.next();
     }
 

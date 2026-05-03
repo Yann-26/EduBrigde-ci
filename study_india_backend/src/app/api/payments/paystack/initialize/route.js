@@ -57,9 +57,9 @@ export async function POST(request) {
         });
 
         if (dbError) {
-            console.error('❌ Failed to save payment to DB:', dbError.message);
+            console.error('❌ Failed to save payment:', dbError.message, dbError.details);
         } else {
-            console.log('✅ Payment saved to database:', reference);
+            console.log('✅ Payment saved:', reference);
         }
 
         return NextResponse.json({

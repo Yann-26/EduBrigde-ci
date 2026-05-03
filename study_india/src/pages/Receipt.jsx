@@ -16,7 +16,7 @@ function Receipt() {
     const fetchPayment = async () => {
         try {
             const token = localStorage.getItem('token')
-            const response = await fetch(`${API_URL}/payments/${reference}`, {
+            const response = await fetch(`${API_URL}/payments/reference/${reference}`, {
                 headers: { Authorization: `Bearer ${token}` },
             })
             const result = await response.json()
@@ -48,8 +48,8 @@ function Receipt() {
                     <button onClick={handlePrint} className="px-4 py-2 bg-indigo-600 text-white rounded-xl hover:bg-indigo-700 flex items-center gap-2">
                         <FiPrinter /> Print Receipt
                     </button>
-                    <Link to="/applications" className="px-4 py-2 bg-gray-100 text-gray-700 rounded-xl hover:bg-gray-200">
-                        Back to Applications
+                    <Link to="/dashboard" className="px-4 py-2 bg-gray-100 text-gray-700 rounded-xl hover:bg-gray-200">
+                        Back to Dashboard
                     </Link>
                 </div>
 
