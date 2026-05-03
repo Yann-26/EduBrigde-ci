@@ -187,8 +187,7 @@ function Apply() {
                 return
             }
 
-            localStorage.setItem('apply_form_data', JSON.stringify(formData))
-
+            // Initialize payment on your backend
             const response = await fetch(`${API_URL}/payments/paystack/initialize`, {
                 method: 'POST',
                 headers: {
@@ -200,13 +199,28 @@ function Apply() {
 
             const result = await response.json()
 
-            if (result.success) {
-                window.location.href = result.data.authorization_url
+            if (result.success && result.data && result.data.access_code) {
+                // Use Paystack's popup instead of redirecting
+                const handler = window.PaystackPop.setup({
+                    key: import.meta.env.VITE_PAYSTACK_PUBLIC_KEY, // Ensure you have this in your .env
+                    email: email,
+                    access_code: result.data.access_code,
+                    onClose: () => {
+                        alert('Payment window closed. Please complete payment to submit your application.');
+                    },
+                    callback: (response) => {
+                        // This runs immediately when payment is successful inside the popup
+                        verifyPayment(response.reference);
+                    }
+                });
+
+                handler.openIframe();
             } else {
                 alert(result.error || 'Payment initialization failed')
             }
         } catch (err) {
             console.error('Payment error:', err)
+            setError('Failed to initialize payment')
         } finally {
             setPaystackLoading(false)
         }
